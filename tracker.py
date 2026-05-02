@@ -80,6 +80,15 @@ def check_prices():
         # Keep only last 30 days
         history = history[-30:]
 
+        # Always notify on manual runs
+        if os.environ.get("MANUAL_RUN") == "true":
+            send_telegram(
+                f"ℹ️ <b>Manual Price Check</b>\n\n"
+                f"<b>{name}</b>\n"
+                f"Current price: €{current_price:.2f}\n\n"
+                f"<a href='{url}'>View product</a>"
+            )
+
         # Immediate alert on price change
         if old_price and current_price != old_price:
             arrow = "📉" if current_price < old_price else "📈"
