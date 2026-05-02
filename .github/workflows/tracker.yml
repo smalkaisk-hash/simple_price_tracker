@@ -1,0 +1,37 @@
+name: Price Tracker
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # runs every day at 9:00 AM UTC
+  workflow_dispatch:        # lets you run it manually too
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tracker
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python tracker.py
+
+      - name: Save updated prices
+        run: |
+          git config user.name "price-bot"
+          git config user.email "bot@github.com"
+          git add prices.json
+          git diff --staged --quiet || git commit -m "Update prices $(date +'%Y-%m-%d')"
+          git push
