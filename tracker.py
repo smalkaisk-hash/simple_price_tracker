@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8711788482:AAFvyHujR2NdjCdFQNQ1lTpZ35WdtjQVjvU")
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "1650957498")
 
 PRODUCTS = [
     {
