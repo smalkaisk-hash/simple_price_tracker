@@ -1,11 +1,12 @@
 import requests
 import json
 import os
+import re
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
-BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
-CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 PRODUCTS = [
     {
@@ -17,22 +18,31 @@ PRODUCTS = [
 PRICE_LOG = "prices.json"
 
 def get_price(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
-    price_tag = soup.select_one(".woocommerce-Price-amount")
-    if price_tag:
-        price_text = price_tag.get_text().strip()
-        return float(price_text.replace("€", "").replace(".", "").replace(",", ".").strip())
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=15)
+        soup = BeautifulSoup(response.text, "html.parser")
+        price_tag = soup.select_one(".price .woocommerce-Price-amount")
+        if price_tag:
+            price_text = price_tag.get_text().strip()
+            match = re.search(r'(\d+,\d+)', price_text)
+            if match:
+                price_str = match.group(1).replace(',', '.')
+                return float(price_str)
+    except requests.RequestException as e:
+        print(f"Network error fetching {url}: {e}")
     return None
 
 def send_telegram(message):
-    requests.post(
-        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-        json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
-    )
+    if BOT_TOKEN and CHAT_ID:
+        requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+        )
 
 def load_prices():
+    if not os.path.exists(PRICE_LOG):
+        return {}
     with open(PRICE_LOG, "r") as f:
         return json.load(f)
 
@@ -93,11 +103,12 @@ def check_prices():
             weekly_diff = (current_price - week_old) if week_old else 0
             arrow = "📉" if weekly_diff < 0 else ("📈" if weekly_diff > 0 else "➡️")
 
+            week_old_str = f"€{week_old:.2f}" if week_old is not None else "N/A"
             send_telegram(
                 f"📊 <b>Weekly Price Report</b>\n\n"
                 f"<b>{name}</b>\n"
                 f"Current price: €{current_price:.2f}\n"
-                f"7 days ago: €{week_old:.2f}\n"
+                f"7 days ago: {week_old_str}\n"
                 f"Weekly change: {arrow} {weekly_diff:+.2f}€\n\n"
                 f"<a href='{url}'>View product</a>"
             )

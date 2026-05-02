@@ -1,15 +1,11 @@
 {
   "Raspberry Pi 5 - 16 GB": {
-    "price": 0.0,
-    "last_checked": "2026-05-02 12:44",
+    "price": 334.16,
+    "last_checked": "2026-05-02 16:41",
     "history": [
       {
         "date": "2026-05-02",
-        "price": 0.0
-      },
-      {
-        "date": "2026-05-02",
-        "price": 0.0
+        "price": 334.16
       }
     ]
   }
