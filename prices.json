@@ -1,1 +1,12 @@
-{}
+{
+  "Raspberry Pi 5 - 16 GB": {
+    "price": 0.0,
+    "last_checked": "2026-05-02 12:17",
+    "history": [
+      {
+        "date": "2026-05-02",
+        "price": 0.0
+      }
+    ]
+  }
+}
