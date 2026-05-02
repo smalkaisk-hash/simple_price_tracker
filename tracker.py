@@ -34,11 +34,16 @@ def get_price(url):
     return None
 
 def send_telegram(message):
-    if BOT_TOKEN and CHAT_ID:
-        requests.post(
-            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-            json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
-        )
+    if not BOT_TOKEN or not CHAT_ID:
+        print("Telegram not configured: TELEGRAM_TOKEN or TELEGRAM_CHAT_ID is missing")
+        return
+    resp = requests.post(
+        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+        json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"}
+    )
+    data = resp.json()
+    if not data.get("ok"):
+        print(f"Telegram error: {data}")
 
 def load_prices():
     if not os.path.exists(PRICE_LOG):
