@@ -67,6 +67,12 @@ def check_prices():
 
         if current_price is None:
             print(f"Could not fetch price for {name}")
+            if os.environ.get("MANUAL_RUN") == "true":
+                send_telegram(
+                    f"⚠️ <b>Manual Price Check Failed</b>\n\n"
+                    f"Could not fetch price for <b>{name}</b>\n\n"
+                    f"<a href='{url}'>View product</a>"
+                )
             continue
 
         print(f"[{now}] {name}: €{current_price}")
