@@ -2,6 +2,7 @@ import requests
 import json
 import os
 import re
+import time
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -20,20 +21,27 @@ PRODUCTS = [
 
 PRICE_LOG = "prices.json"
 
+PRICE_CHANGE_THRESHOLD = 0.05  # 5%
+MAX_RETRIES = 3
+RETRY_DELAY = 900  # 15 minutes between retries
+
 def get_price(url):
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=15)
-        soup = BeautifulSoup(response.text, "html.parser")
-        price_tag = soup.select_one(".price .woocommerce-Price-amount")
-        if price_tag:
-            price_text = price_tag.get_text().strip()
-            match = re.search(r'(\d+,\d+)', price_text)
-            if match:
-                price_str = match.group(1).replace(',', '.')
-                return float(price_str)
-    except requests.RequestException as e:
-        print(f"Network error fetching {url}: {e}")
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=15)
+            soup = BeautifulSoup(response.text, "html.parser")
+            price_tag = soup.select_one(".price .woocommerce-Price-amount")
+            if price_tag:
+                price_text = price_tag.get_text().strip()
+                match = re.search(r'(\d+,\d+)', price_text)
+                if match:
+                    price_str = match.group(1).replace(',', '.')
+                    return float(price_str)
+        except requests.RequestException as e:
+            print(f"Network error fetching {url} (attempt {attempt}/{MAX_RETRIES}): {e}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
     return None
 
 def send_telegram(message):
@@ -103,16 +111,17 @@ def check_prices():
                 f"<a href='{url}'>View product</a>"
             )
 
-        # Immediate alert on price change
-        if old_price and current_price != old_price:
+        # Immediate alert on price change >= 5%
+        if old_price and abs(current_price - old_price) / old_price >= PRICE_CHANGE_THRESHOLD:
             arrow = "📉" if current_price < old_price else "📈"
             diff = current_price - old_price
+            pct = (diff / old_price) * 100
             send_telegram(
                 f"{arrow} <b>Price change!</b>\n\n"
                 f"<b>{name}</b>\n"
                 f"Was: €{old_price:.2f}\n"
                 f"Now: €{current_price:.2f}\n"
-                f"Change: {diff:+.2f}€\n\n"
+                f"Change: {diff:+.2f}€ ({pct:+.1f}%)\n\n"
                 f"<a href='{url}'>View product</a>"
             )
 
