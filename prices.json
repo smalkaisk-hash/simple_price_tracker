@@ -1,128 +1,134 @@
 {
-  "Raspberry Pi 5 - 16 GB": {
-    "price": 334.28,
-    "last_checked": "2026-07-21 11:05",
-    "history": [
-      {
-        "date": "2026-06-22",
-        "price": 334.41
+  "products": {},
+  "watches": {
+    "Techbuyer SATA HDD": {
+      "last_checked": "2026-08-01 16:03",
+      "best_eur_per_tb": 22.29,
+      "matched": 42,
+      "threshold": 25.0,
+      "deals": {
+        "HUH721212ALE600-WD": {
+          "name": "WD 12TB 7.2K SATA Hard Drive",
+          "price": 228.94,
+          "tb": 12.0,
+          "per_tb": 19.08,
+          "eur_per_tb": 22.29
+        },
+        "ST14000NM000JR-SEAGATE": {
+          "name": "Seagate ST14000NM000JR Exos X18 14TB 3.5in SATA 7.2K 6Gbps HDD",
+          "price": 270.56,
+          "tb": 14.0,
+          "per_tb": 19.33,
+          "eur_per_tb": 22.58
+        },
+        "WUH721414ALE6L4-WD": {
+          "name": "Western Digital 14TB 7.2K 6G SATA 3.5 Inch HDD",
+          "price": 278.89,
+          "tb": 14.0,
+          "per_tb": 19.92,
+          "eur_per_tb": 23.28
+        },
+        "3HR103-899-3RD PARTY": {
+          "name": "3rd Party 3HR103-899 20TB 6Gbps  3.5inch SATA 7.2K HDD",
+          "price": 412.09,
+          "tb": 20.0,
+          "per_tb": 20.6,
+          "eur_per_tb": 24.08
+        },
+        "HUH721010ALE600-HITACHI": {
+          "name": "Hitachi HUH721010ALE600 10TB 3.5inch SATA 7.2K 6Gbps HDD",
+          "price": 208.13,
+          "tb": 10.0,
+          "per_tb": 20.81,
+          "eur_per_tb": 24.32
+        }
       },
-      {
-        "date": "2026-06-23",
-        "price": 334.41
+      "history": [
+        {
+          "date": "2026-08-01",
+          "best_eur_per_tb": 22.29,
+          "matched": 42
+        }
+      ]
+    },
+    "Renewtech SATA HDD": {
+      "last_checked": "2026-08-01 16:06",
+      "best_eur_per_tb": 26.25,
+      "matched": 7,
+      "threshold": 25.0,
+      "deals": {},
+      "history": [
+        {
+          "date": "2026-08-01",
+          "best_eur_per_tb": 26.25,
+          "matched": 7
+        }
+      ]
+    },
+    "ServerShop24 SATA HDD": {
+      "last_checked": "2026-08-01 16:06",
+      "best_eur_per_tb": 18.01,
+      "matched": 3,
+      "threshold": 25.0,
+      "deals": {
+        "50861": {
+          "name": "TOSHIBA MG07ACA 14TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - MG07ACA14TE",
+          "price": 252.09,
+          "tb": 14.0,
+          "per_tb": 18.01,
+          "eur_per_tb": 18.01
+        },
+        "49708": {
+          "name": "Seagate Exos 26TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - ST26000NM000C",
+          "price": 546.21,
+          "tb": 26.0,
+          "per_tb": 21.01,
+          "eur_per_tb": 21.01
+        }
       },
-      {
-        "date": "2026-06-24",
-        "price": 334.41
+      "history": [
+        {
+          "date": "2026-08-01",
+          "best_eur_per_tb": 18.01,
+          "matched": 3
+        }
+      ]
+    },
+    "Gekko SATA HDD": {
+      "last_checked": "2026-08-01 16:07",
+      "best_eur_per_tb": 20.09,
+      "matched": 4,
+      "threshold": 25.0,
+      "deals": {
+        "50024273": {
+          "name": "HPE 18TB 7.2k 3.5\" LFF 6G SATA Hard Drive - P38440-001 P37678-B21 MB018000GYDKR",
+          "price": 430.32,
+          "tb": 18.0,
+          "per_tb": 23.91,
+          "eur_per_tb": 20.09
+        },
+        "50024496": {
+          "name": "Fujitsu Exos 7E8 6TB 7.2k 6G 3.5\" LFF SATA hard drive - 10602753820 ST6000NM021A",
+          "price": 171.6,
+          "tb": 6.0,
+          "per_tb": 28.6,
+          "eur_per_tb": 24.03
+        },
+        "50022977": {
+          "name": "Supermicro HGST SATA-Festplatte 10TB 7,2k SATA 6G 3,5\" - HUH721010ALE604 0F27495",
+          "price": 292.16,
+          "tb": 10.0,
+          "per_tb": 29.22,
+          "eur_per_tb": 24.55
+        }
       },
-      {
-        "date": "2026-06-25",
-        "price": 334.41
-      },
-      {
-        "date": "2026-06-26",
-        "price": 334.41
-      },
-      {
-        "date": "2026-06-27",
-        "price": 334.41
-      },
-      {
-        "date": "2026-06-28",
-        "price": 334.41
-      },
-      {
-        "date": "2026-06-29",
-        "price": 334.41
-      },
-      {
-        "date": "2026-06-30",
-        "price": 334.41
-      },
-      {
-        "date": "2026-07-01",
-        "price": 334.41
-      },
-      {
-        "date": "2026-07-02",
-        "price": 334.41
-      },
-      {
-        "date": "2026-07-03",
-        "price": 334.41
-      },
-      {
-        "date": "2026-07-04",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-05",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-06",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-07",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-08",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-09",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-10",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-11",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-12",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-13",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-14",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-15",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-16",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-17",
-        "price": 334.36
-      },
-      {
-        "date": "2026-07-18",
-        "price": 334.29
-      },
-      {
-        "date": "2026-07-19",
-        "price": 334.21
-      },
-      {
-        "date": "2026-07-20",
-        "price": 334.28
-      },
-      {
-        "date": "2026-07-21",
-        "price": 334.28
-      }
-    ]
+      "history": [
+        {
+          "date": "2026-08-01",
+          "best_eur_per_tb": 20.09,
+          "matched": 4
+        }
+      ]
+    }
   }
 }
