@@ -420,7 +420,7 @@ def transfer_gbps(name, cap=SATA_MAX_GBPS):
 def rank_by_price_per_tb(items, watch, rates):
     """Filter to matching drives and sort them cheapest-per-TB first.
 
-    `per_tb` stays in the shop's own currency and VAT basis for display; `eur_per_tb`
+    `per_tb` stays in the shop's own currency and VAT basis for auditing; `eur_per_tb`
     is the normalised ex-VAT figure everything is actually ranked and alerted on.
     """
     pattern = re.compile(watch["name_filter"], re.I)
@@ -461,6 +461,7 @@ def rank_by_price_per_tb(items, watch, rates):
             "price": round(price, 2),
             "tb": tb,
             "per_tb": round(price / tb, 2),
+            "eur_price": round(eur, 2),
             "eur_per_tb": round(eur / tb, 2),
             "gbps": gbps,
             "url": item.get("url"),
@@ -576,14 +577,21 @@ def is_weekly_run():
     return datetime.now().weekday() == 0
 
 
-def format_deal(deal, currency, url=None):
-    line = f"€{deal['eur_per_tb']:.2f}/TB — <b>{deal['name']}</b>\n"
-    if currency == "€":
-        line += f"    €{deal['price']:.2f} · {deal['tb']:.4g}TB"
-    else:
-        # Show the native price too, so the figure matches what the shop displays.
-        line += (f"    {currency}{deal['price']:.2f} ({currency}{deal['per_tb']:.2f}/TB)"
-                 f" · {deal['tb']:.4g}TB")
+# One line, once per message -- not per deal, which is what made it unreadable.
+EUR_NOTE = ("\n\n<i>EUR ex-VAT, converted at ECB rates. A non-EUR shop's own page "
+            "will show a different number.</i>")
+
+
+def format_deal(deal, url=None):
+    """One deal, EUR only.
+
+    Everything is already normalised to EUR ex-VAT for ranking, so the native price
+    is deliberately not shown -- carrying two currencies made every line unreadable.
+    The tradeoff is that a UK shop's own page quotes GBP, so the figure here will
+    not match what the site displays; see the footer note on each message.
+    """
+    line = (f"€{deal['eur_per_tb']:.2f}/TB — <b>{deal['name']}</b>\n"
+            f"    €{deal.get('eur_price', 0):.2f} · {deal['tb']:.4g}TB")
     gbps = deal.get("gbps")
     line += f" · {gbps:.4g}Gbps" if gbps else " · rate unstated"
     url = url or deal.get("url")
@@ -624,7 +632,6 @@ def check_watches(state, weekly, manual):
 
     for watch in WATCHES:
         name = watch["name"]
-        currency = watch.get("currency", "€")
         threshold = MAX_EUR_PER_TB
 
         prev = state["watches"].get(name, {})
@@ -701,35 +708,40 @@ def check_watches(state, weekly, manual):
                     print(f"{name}: everything ranked is sold out")
                     continue
 
-        leaderboard.extend((name, currency, d) for d in ranked[:5])
+        # The leaderboard formats deals without the urls dict in scope, so fold the
+        # resolved link onto the deal itself or sitemap-linked shops lose theirs.
+        for d in ranked[:5]:
+            d["url"] = urls.get(d["sku"]) or d.get("url")
+        leaderboard.extend((name, d) for d in ranked[:5])
 
         if first_run and qualifying:
-            body = "\n\n".join(format_deal(d, currency, urls.get(d["sku"])) for d in qualifying[:10])
+            body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in qualifying[:10])
             send_telegram(
                 f"🆕 <b>{name} — now watching</b>\n\n"
                 f"{len(qualifying)} drive(s) at or under €{threshold:.2f}/TB:\n\n{body}"
+                + EUR_NOTE
             )
         else:
             if new_deals:
-                body = "\n\n".join(format_deal(d, currency, urls.get(d["sku"])) for d in new_deals[:10])
+                body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in new_deals[:10])
                 send_telegram(
                     f"💰 <b>New deal under €{threshold:.2f}/TB</b>\n\n"
-                    f"<i>{name}</i>\n\n{body}"
+                    f"<i>{name}</i>\n\n{body}" + EUR_NOTE
                 )
             for deal, old in dropped[:10]:
                 pct = ((deal["eur_per_tb"] - old) / old) * 100
                 send_telegram(
                     f"📉 <b>Price drop</b>\n\n<i>{name}</i>\n\n"
-                    f"{format_deal(deal, currency, urls.get(deal['sku']))}\n"
+                    f"{format_deal(deal, urls.get(deal['sku']))}\n"
                     f"    was €{old:.2f}/TB ({pct:+.1f}%)"
                 )
 
         if manual and not first_run:
-            body = "\n\n".join(format_deal(d, currency, urls.get(d["sku"])) for d in ranked[:5])
+            body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in ranked[:5])
             send_telegram(
                 f"ℹ️ <b>Manual check — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
-                f"€{threshold:.2f}/TB\n\nBest value right now:\n\n{body}"
+                f"€{threshold:.2f}/TB\n\nBest value right now:\n\n{body}" + EUR_NOTE
             )
 
         history = prev.get("history", [])
@@ -742,7 +754,7 @@ def check_watches(state, weekly, manual):
             week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             was = next((h["best_eur_per_tb"] for h in reversed(history)
                         if h["date"] <= week_ago and "best_eur_per_tb" in h), None)
-            body = "\n\n".join(format_deal(d, currency, urls.get(d["sku"])) for d in ranked[:5])
+            body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in ranked[:5])
             trend = ""
             if was:
                 diff = ranked[0]["eur_per_tb"] - was
@@ -753,7 +765,7 @@ def check_watches(state, weekly, manual):
                 f"📊 <b>Weekly Report — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
                 f"€{threshold:.2f}/TB\n{trend}"
-                f"Best value right now:\n\n{body}"
+                f"Best value right now:\n\n{body}" + EUR_NOTE
             )
 
         state["watches"][name] = {
@@ -763,21 +775,24 @@ def check_watches(state, weekly, manual):
             "threshold": threshold,
             # Only qualifying deals are remembered, so a drive that lapses above
             # the threshold and later returns will alert again.
+            # Native price/per_tb are kept in state for auditing even though alerts
+            # only ever show EUR, so a suspicious figure can be traced back.
             "deals": {d["sku"]: {"name": d["name"], "price": d["price"], "tb": d["tb"],
-                                 "per_tb": d["per_tb"], "eur_per_tb": d["eur_per_tb"]}
+                                 "per_tb": d["per_tb"], "eur_price": d["eur_price"],
+                                 "eur_per_tb": d["eur_per_tb"]}
                       for d in qualifying},
             "history": history,
         }
 
     if leaderboard and (weekly or manual):
-        leaderboard.sort(key=lambda row: row[2]["eur_per_tb"])
+        leaderboard.sort(key=lambda row: row[1]["eur_per_tb"])
         body = "\n\n".join(
-            f"{format_deal(deal, currency)}\n    <i>{shop}</i>"
-            for shop, currency, deal in leaderboard[:10]
+            f"{format_deal(deal)}\n    <i>{shop}</i>"
+            for shop, deal in leaderboard[:10]
         )
         send_telegram(
             f"🏆 <b>Best €/TB across all shops</b>\n\n"
-            f"<i>ex-VAT, {len(WATCHES)} shops compared</i>\n\n{body}"
+            f"<i>{len(WATCHES)} shops compared</i>\n\n{body}" + EUR_NOTE
         )
 
 
