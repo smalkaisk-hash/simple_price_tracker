@@ -873,6 +873,17 @@ def main():
 
     save_state(state)
 
+    # Credentials used to be hardcoded, which meant a missing secret still looked
+    # like a healthy run. Scraping is finished and saved by this point, so failing
+    # here costs nothing but turns the Actions run red instead of a silent green
+    # with every alert dropped on the floor.
+    if not BOT_TOKEN or not CHAT_ID:
+        missing = " and ".join(n for n, v in
+                               (("TELEGRAM_TOKEN", BOT_TOKEN), ("TELEGRAM_CHAT_ID", CHAT_ID))
+                               if not v)
+        raise SystemExit(f"FAILED: {missing} not set -- prices were saved but no "
+                         f"alert could be sent. Set it in the repository secrets.")
+
 
 if __name__ == "__main__":
     main()
