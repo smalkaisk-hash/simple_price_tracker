@@ -2,9 +2,9 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-08-01 18:48",
+      "last_checked": "2026-08-02 10:41",
       "best_eur_per_tb": 22.29,
-      "matched": 42,
+      "matched": 41,
       "threshold": 25.0,
       "deals": {
         "HUH721212ALE600-WD": {
@@ -53,18 +53,23 @@
           "date": "2026-08-01",
           "best_eur_per_tb": 22.29,
           "matched": 42
+        },
+        {
+          "date": "2026-08-02",
+          "best_eur_per_tb": 22.29,
+          "matched": 41
         }
       ]
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-08-01 18:48",
+      "last_checked": "2026-08-02 10:41",
       "failing_since": "2026-08-01",
       "last_error": "scrape returned no products"
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-08-01 18:48",
+      "last_checked": "2026-08-02 10:41",
       "best_eur_per_tb": 18.01,
-      "matched": 3,
+      "matched": 2,
       "threshold": 25.0,
       "deals": {
         "50861": {
@@ -74,14 +79,6 @@
           "per_tb": 18.01,
           "eur_price": 252.09,
           "eur_per_tb": 18.01
-        },
-        "49708": {
-          "name": "Seagate Exos 26TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - ST26000NM000C",
-          "price": 546.21,
-          "tb": 26.0,
-          "per_tb": 21.01,
-          "eur_price": 546.21,
-          "eur_per_tb": 21.01
         }
       },
       "history": [
@@ -89,11 +86,16 @@
           "date": "2026-08-01",
           "best_eur_per_tb": 18.01,
           "matched": 3
+        },
+        {
+          "date": "2026-08-02",
+          "best_eur_per_tb": 18.01,
+          "matched": 2
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-08-01 18:48",
+      "last_checked": "2026-08-02 10:41",
       "best_eur_per_tb": 20.09,
       "matched": 4,
       "threshold": 25.0,
@@ -126,6 +128,11 @@
       "history": [
         {
           "date": "2026-08-01",
+          "best_eur_per_tb": 20.09,
+          "matched": 4
+        },
+        {
+          "date": "2026-08-02",
           "best_eur_per_tb": 20.09,
           "matched": 4
         }
