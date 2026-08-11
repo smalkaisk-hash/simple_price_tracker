@@ -20,17 +20,31 @@ CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 # Single-product watches: exact URL, scraped price.
 PRODUCTS = []
 
-# Every watch is normalised to EUR per TB *excluding VAT* before ranking, so shops
-# in different currencies and VAT conventions can be compared in one list. With a
-# Latvian PVN number, intra-EU purchases are reverse-charged and the ex-VAT figure
-# is what you actually pay; imports from the UK attract 21% LV VAT on top plus a
-# courier clearance fee, so a UK drive needs to beat an EU one by a clear margin.
-MAX_EUR_PER_TB = 25.0  # alert threshold; the old £22/TB was ~EUR 25.7/TB
+# Every watch is normalised to EUR per TB *including 21% Latvian VAT* before ranking,
+# so shops in different currencies and VAT conventions compare in one list and every
+# figure is the landed cost in Latvia. A shop's own VAT rate never enters the maths:
+# intra-EU purchases are reverse-charged, so German 19% is not what gets paid, and a
+# UK import is zero-rated for export then charged LV import VAT at the border. A UK
+# drive additionally attracts a courier clearance fee that is *not* modelled here, so
+# it still needs to beat an EU one by a clear margin.
+LV_VAT_RATE = 0.21
+
+# Alert threshold, measured on goods alone -- before 21% VAT and before delivery (the
+# older £22/TB was ~EUR 25.7/TB). Tax and delivery are broken out on every alert so the
+# real cost is visible, but they never decide who alerts or who ranks first: delivery is
+# a flat per-order charge, so folding it in would reorder the list by capacity rather
+# than by value, and a shop changing its delivery table would fire price alerts.
+MAX_EUR_PER_TB = 25.0
 
 # Category watches: scrape a whole listing, rank by price per TB, alert on cheap drives.
-#   source       -- which parser to use (see PARSERS)
-#   price_basis  -- "net" if scraped prices exclude VAT, "gross" if they include it
-#   vat_rate     -- only used to strip VAT back off a "gross" shop
+#   source            -- which parser to use (see PARSERS)
+#   price_basis       -- "net" if scraped prices exclude VAT, "gross" if they include it
+#   vat_rate          -- only used to strip VAT back off a "gross" shop
+#   display_vat_rate  -- VAT the shop adds on the price *its own page* shows, purely so
+#                        an alert can be reconciled with the page. Never used in ranking:
+#                        what gets paid is LV_VAT_RATE, not the shop's local rate.
+#   shipping          -- where to read delivery to Latvia, plus a fallback charge and
+#                        any free-over-N tier. See fetch_shipping().
 WATCHES = [
     {
         "name": "Techbuyer SATA HDD",
@@ -38,7 +52,11 @@ WATCHES = [
         "urls": ["https://www.techbuyer.com/uk/server-parts/server-storage/hdd-hard-disk-drives"],
         "currency": "£",
         "currency_code": "GBP",
-        "price_basis": "net",         # Techbuyer's feed is ex-VAT (site default)
+        "price_basis": "net",         # the GA4 feed is ex-VAT (basePrice, not finalPrice)
+        "display_vat_rate": 0.20,     # the page headline is inc-VAT: 228.94 -> £274.73
+        # Banded by order value, not weight, and Latvia sits in "Mainland Europe".
+        "shipping": {"source": "techbuyer", "fallback": 30.0, "free_over": 500.0,
+                     "url": "https://www.techbuyer.com/uk/delivery"},
         "name_filter": r"\bSATA\b",   # only SATA drives
         "min_tb": 4.0,                # ignore small drives, they skew price/TB
         "min_gbps": 6.0,              # SATA III only; excludes 3Gbps SATA II drives
@@ -60,6 +78,10 @@ WATCHES = [
         "currency": "€",
         "currency_code": "EUR",
         "price_basis": "net",         # product pages say "zzgl. MwSt." (plus VAT)
+        "display_vat_rate": 0.0,      # ...and display that net figure, so nothing to add
+        # One flat charge for every country inside the EU; no free-delivery tier.
+        "shipping": {"source": "renewtech", "fallback": 20.0,
+                     "url": "https://www.renewtech.de/delivery"},
         "name_filter": r"\bSATA\b",
         "min_tb": 4.0,
         "min_gbps": 6.0,
@@ -79,6 +101,11 @@ WATCHES = [
         "currency": "€",
         "currency_code": "EUR",
         "price_basis": "net",
+        "display_vat_rate": 0.19,     # page shows gross: priceNet 252.09 -> €299.99
+        # DHL Standard International: one flat rate to 31.5kg, i.e. ~45 drives. The
+        # free-over-400 tier on the same page is Germany only and does not apply.
+        "shipping": {"source": "servershop24", "fallback": 17.99,
+                     "url": "https://www.servershop24.de/en/shipping/"},
         "name_filter": r"\bSATA\b",
         "min_tb": 4.0,
         "min_gbps": 6.0,
@@ -91,8 +118,15 @@ WATCHES = [
         "urls": ["https://www.gekko-computer.de/en/c/Parts/Hard-Drives/SATA"],
         "currency": "€",
         "currency_code": "EUR",
-        "price_basis": "gross",       # listing shows "incl. VAT"
-        "vat_rate": 0.19,             # German standard rate
+        # The tile *displays* gross, but the data-price attribute scraped from it is
+        # already net, so there is nothing left to strip.
+        "price_basis": "net",
+        "display_vat_rate": 0.19,     # data-price 410.92 x1.19 -> the €489.00 on the page
+        # The only shop with a genuinely per-country endpoint: countryCode=LV re-renders
+        # the whole weight table server-side. Free delivery is Germany only.
+        "shipping": {"source": "gekko", "fallback": 24.95,
+                     "url": "https://www.gekko-computer.de/en/shipping_and_delivery"
+                            ".html?countryCode=LV"},
         "name_filter": r"\bSATA\b",
         "min_tb": 4.0,
         "min_gbps": 6.0,
@@ -146,7 +180,13 @@ SS24_STOCK_RE = re.compile(r'Aktueller Lagerbestand: (\d+)')
 SS24_ALT_RE = re.compile(r'data-alt="([^"]*)"')
 
 # Gekko puts everything on the <article> wrapper as data-* attributes.
-GEKKO_PRICE_RE = re.compile(r'content="([\d.]+)"\s+itemprop="price"')
+# Three different numbers sit in one tile, and only data-price is the real one:
+#   data-price="410.92"           -- net; x1.19 == 489.00, the price the product page shows
+#   content="430.32" itemprop=..  -- the grid's "from" price, a flat gross x 0.88 across
+#                                    the whole catalogue, and absent from the product page
+# Scraping the itemprop and then stripping 19% VAT off it reported EUR 361.61 for a
+# drive the shop sells at EUR 489.00 -- 26% under, on every Gekko alert ever sent.
+GEKKO_PRICE_RE = re.compile(r'data-price="([\d.]+)"')
 GEKKO_HREF_RE = re.compile(r'href="(/en/p/[^"]+)"')
 GEKKO_AVAIL_RE = re.compile(r'<div class="availability (\w+)"')
 
@@ -181,17 +221,211 @@ def fetch_eur_rates():
     return {code: float(rate) for code, rate in FX_RE.findall(resp.text)}
 
 
+def _to_eur(amount, watch, rates):
+    """Currency conversion only. None when no rate is available."""
+    code = watch.get("currency_code", "EUR")
+    if code == "EUR":
+        return amount
+    rate = rates.get(code)
+    return None if not rate else amount / rate  # ECB quotes units of `code` per 1 EUR
+
+
 def to_eur_net(price, watch, rates):
     """Convert a scraped price to EUR excluding VAT. Returns None if unconvertible."""
-    code = watch.get("currency_code", "EUR")
-    if code != "EUR":
-        rate = rates.get(code)
-        if not rate:
-            return None
-        price = price / rate  # ECB quotes units of `code` per 1 EUR
     if watch.get("price_basis") == "gross":
         price = price / (1.0 + watch.get("vat_rate", 0.0))
-    return price
+    return _to_eur(price, watch, rates)
+
+
+def shipping_to_eur_net(shipping, watch, rates):
+    """Convert a published shipping charge to EUR excluding VAT.
+
+    A shop quotes delivery on the same VAT basis as the prices its pages display, so
+    display_vat_rate is what comes off here -- not price_basis/vat_rate, which describe
+    the *scraped product field* and are a different basis on three of the four shops.
+    """
+    return _to_eur(shipping / (1.0 + watch.get("display_vat_rate", 0.0)), watch, rates)
+
+
+def shipping_charged(price, watch, shipping):
+    """Delivery actually payable on a one-drive order, honouring any free-over tier.
+
+    The threshold is compared against the *net* scraped price: a Latvian buyer is
+    invoiced ex-VAT on an intra-EU or export sale, and if that is wrong it errs towards
+    charging delivery, which can only over-state a total -- never repeat the
+    under-reporting this whole normalisation exists to prevent.
+    """
+    free_over = watch.get("shipping", {}).get("free_over")
+    return 0.0 if free_over and price >= free_over else shipping
+
+
+def landed_breakdown(price, watch, rates, shipping=0.0):
+    """What one drive costs delivered to Latvia, itemised in EUR. None if unconvertible.
+
+    The shop's own VAT rate is deliberately not used on the goods. An intra-EU purchase
+    on a PVN number is reverse-charged, so German 19% never gets paid; a UK import is
+    zero-rated for export and then charged LV import VAT at the border. Either way the
+    rate that applies is Latvia's.
+
+    Delivery sits *inside* the VAT base: VAT is due on the whole supply, and UK import
+    VAT is levied on the customs value including freight.
+
+    Each part is rounded to the cent and the total is summed *from those rounded parts*,
+    because every alert prints all four -- a total a cent adrift from its own itemised
+    breakdown reads as a bug. Note this figure is shown, not ranked on; see
+    MAX_EUR_PER_TB.
+    """
+    goods = to_eur_net(price, watch, rates)
+    delivery = shipping_to_eur_net(shipping_charged(price, watch, shipping), watch, rates)
+    if goods is None or delivery is None:
+        return None
+    goods, delivery = round(goods, 2), round(delivery, 2)
+    vat = round((goods + delivery) * LV_VAT_RATE, 2)
+    return {"goods": goods, "delivery": delivery, "vat": vat,
+            "total": round(goods + delivery + vat, 2)}
+
+
+def to_eur_landed(price, watch, rates, shipping=0.0):
+    """Just the delivered total from landed_breakdown(). None if unconvertible."""
+    parts = landed_breakdown(price, watch, rates, shipping)
+    return None if parts is None else parts["total"]
+
+
+def shop_shelf_price(price, watch):
+    """The number the shop's own page shows, in the shop's own currency.
+
+    Carried on every alert purely so a deal can be reconciled against the page. Three
+    of the four shops display gross at their local rate while the scraped field is net,
+    which is what made alerts look wildly cheaper than the site.
+    """
+    return price * (1.0 + watch.get("display_vat_rate", 0.0))
+
+
+# --- Delivery to Latvia -------------------------------------------------------------
+# Every shop publishes a Latvia-applicable delivery price on a page a plain GET can
+# read, so it is re-fetched each run rather than frozen into the source. Each watch
+# still carries a `fallback`: if a page is redesigned, a stale-but-sane charge is far
+# better than silently dropping delivery and under-reporting totals again.
+#
+# All four figures are per *order*, not per drive. Totals here assume a one-drive
+# order, which is exact for buying one and pessimistic for buying several.
+
+
+def _cells(table):
+    """Row-major text cells of an HTML table, entities decoded."""
+    return [[" ".join(html_lib.unescape(re.sub(r"<[^>]+>", "", c)).split())
+             for c in re.findall(r"<t[dh][^>]*>.*?</t[dh]>", row, re.S)]
+            for row in re.findall(r"<tr[^>]*>.*?</tr>", table, re.S)]
+
+
+def _amount(text):
+    """First money amount in a string, comma- or dot-decimal. None if there is none."""
+    m = re.search(r"(\d[\d.,]*)", text or "")
+    if not m:
+        return None
+    raw = m.group(1).rstrip(".,")
+    # "17,99" and "1.234,56" are comma-decimal; "24.95" is dot-decimal.
+    if "," in raw:
+        raw = raw.replace(".", "").replace(",", ".")
+    return float(raw)
+
+
+def shipping_techbuyer(text):
+    """Techbuyer bands by order value, and Latvia falls under "Mainland Europe".
+
+    The UK-only table sits above it on the same page with much cheaper numbers, so the
+    search is anchored on the heading rather than taking the first table.
+    """
+    start = re.search(r"Mainland Europe", text, re.I)
+    if not start:
+        return None
+    table = re.search(r"<table.*?</table>", text[start.end():], re.S)
+    if not table:
+        return None
+    for row in _cells(table.group(0)):
+        # The paying row is the one whose price cell is an amount, not "FREE".
+        if len(row) >= 2 and re.search(r"up to", row[0], re.I):
+            return _amount(row[1])
+    return None
+
+
+def shipping_renewtech(text):
+    """Renewtech quotes one flat charge for every country inside the EU."""
+    row = re.search(r"<tr[^>]*>(?:(?!</tr>).)*?(?:innerhalb der EU|within the EU)"
+                    r"(?:(?!</tr>).)*?</tr>", text, re.S | re.I)
+    if not row:
+        return None
+    # Cells read "2-3 Werktage / 20,- EUR"; the standard band is the first priced one.
+    for cell in _cells(row.group(0))[0][1:]:
+        if re.search(r"EUR|€", cell):
+            return _amount(cell.split("/")[-1])
+    return None
+
+
+def shipping_servershop24(text):
+    """One international flat rate covers every EU member state up to 31.5 kg.
+
+    Anchored past the "DHL Standard International" heading so the much cheaper German
+    domestic rate above it (and its free-over-400 tier, which Latvia does not get)
+    cannot be picked up by mistake.
+    """
+    start = re.search(r"DHL Standard International", text, re.I)
+    m = re.search(r"flat rate up to[^/]*/\s*(?:&euro;|€)?\s*([\d.,]+)",
+                  text[start.end():] if start else "", re.I)
+    return _amount(m.group(1)) if m else None
+
+
+def shipping_gekko(text):
+    """Gekko re-renders its whole delivery table server-side per ?countryCode=LV.
+
+    The first table is the default carrier; later ones are alternatives that a buyer
+    would have to choose deliberately, so the default is what gets quoted. A 3.5in
+    drive is well under 1 kg, so the "From 0.00 kg" column is the one that applies.
+    """
+    for table in re.findall(r"<table.*?</table>", text, re.S):
+        rows = _cells(table)
+        if not rows or not any(re.search(r"From 0[.,]00", c) for c in rows[0]):
+            continue
+        col = next(i for i, c in enumerate(rows[0]) if re.search(r"From 0[.,]00", c))
+        for row in rows[1:]:
+            if len(row) > col and re.search(r"\d", row[col]):
+                return _amount(row[col])
+    return None
+
+
+SHIPPING_PARSERS = {
+    "techbuyer": shipping_techbuyer,
+    "renewtech": shipping_renewtech,
+    "servershop24": shipping_servershop24,
+    "gekko": shipping_gekko,
+}
+
+
+def fetch_shipping(watch):
+    """Delivery to Latvia for one shop, in that shop's own currency and VAT basis.
+
+    Falls back to the configured constant on any failure. A silent zero here would put
+    the tracker straight back to quoting less than the real cost, so the fallback is
+    mandatory and every degradation is logged.
+    """
+    cfg = watch.get("shipping") or {}
+    fallback = cfg.get("fallback", 0.0)
+    parser = SHIPPING_PARSERS.get(cfg.get("source"))
+    if not parser or not cfg.get("url"):
+        return fallback
+    try:
+        resp = requests.get(cfg["url"], headers={"User-Agent": USER_AGENT}, timeout=30)
+        resp.raise_for_status()
+        resp.encoding = "utf-8"
+    except requests.RequestException as e:
+        print(f"{watch['name']}: shipping page unreachable ({e}); using {fallback}")
+        return fallback
+    value = parser(resp.text)
+    if value is None:
+        print(f"{watch['name']}: could not read shipping from {cfg['url']}; "
+              f"using fallback {fallback}")
+        return fallback
+    return value
 
 
 def parse_ga4(html):
@@ -417,11 +651,12 @@ def transfer_gbps(name, cap=SATA_MAX_GBPS):
     return min(float(match.group(1)), cap) if cap else float(match.group(1))
 
 
-def rank_by_price_per_tb(items, watch, rates):
+def rank_by_price_per_tb(items, watch, rates, shipping=0.0):
     """Filter to matching drives and sort them cheapest-per-TB first.
 
     `per_tb` stays in the shop's own currency and VAT basis for auditing; `eur_per_tb`
-    is the normalised ex-VAT figure everything is actually ranked and alerted on.
+    is the delivered, 21%-VAT-inclusive figure everything is ranked and alerted on.
+    `shipping` is that shop's delivery charge to Latvia, in its own currency.
     """
     pattern = re.compile(watch["name_filter"], re.I)
     min_tb = watch["min_tb"]
@@ -451,9 +686,11 @@ def rank_by_price_per_tb(items, watch, rates):
                 continue
         if item.get("in_stock") is False:
             continue  # None means "shop did not say"; only an explicit no is dropped
-        eur = to_eur_net(price, watch, rates)
-        if eur is None:
+        parts = landed_breakdown(price, watch, rates, shipping)
+        if parts is None:
             continue  # no FX rate available; better to skip than to alert wrongly
+        eur_net, eur = parts["goods"], parts["total"]
+        charged = shipping_charged(price, watch, shipping)  # native, for "shop shows"
         ranked.append({
             "sku": item.get("item_id"),
             "name": name,
@@ -461,15 +698,34 @@ def rank_by_price_per_tb(items, watch, rates):
             "price": round(price, 2),
             "tb": tb,
             "per_tb": round(price / tb, 2),
-            "eur_price": round(eur, 2),
+            # Goods only, before 21% VAT and before delivery. This is what the
+            # threshold and the ranking are measured on; see MAX_EUR_PER_TB.
+            "eur_net_price": eur_net,
+            "eur_net_per_tb": round(eur_net / tb, 2),
+            # ...and the same drive delivered, for information only. The three parts
+            # below add up to eur_price exactly, so an alert can be checked by hand.
+            "eur_delivery": parts["delivery"],
+            "eur_vat": parts["vat"],
+            "eur_price": eur,
             "eur_per_tb": round(eur / tb, 2),
+            # What the shop's own pages show, for reconciling the alert against them.
+            "shop_price": round(shop_shelf_price(price, watch), 2),
+            "shop_shipping": round(charged, 2),
+            "currency": watch["currency"],
             "gbps": gbps,
             "url": item.get("url"),
             "in_stock": item.get("in_stock"),
             "stock_qty": item.get("stock_qty"),
         })
-    ranked.sort(key=lambda d: d["eur_per_tb"])
+    # Sorted on goods alone, matching the threshold. Delivery is flat per order, so
+    # ranking on the delivered figure would sort by capacity as much as by value.
+    ranked.sort(key=lambda d: d["eur_net_per_tb"])
     return ranked
+
+
+def qualifies(deal, threshold):
+    """Whether a deal clears the alert bar -- goods only, before VAT and delivery."""
+    return deal["eur_net_per_tb"] <= threshold
 
 
 def load_sitemap_index(sitemap_url=SITEMAP_URL):
@@ -572,28 +828,68 @@ def save_state(state):
         json.dump(state, f, indent=2)
 
 
+# Stamped on every history point. Bump this whenever the meaning of best_eur_per_tb
+# changes, so the weekly trend never subtracts two figures on different bases -- the
+# ex-VAT -> incl-21%-VAT switch would otherwise have read as a 21% overnight rise.
+HISTORY_BASIS = "eur_incl_lv_vat"
+
+
+def trend_baseline(history, week_ago):
+    """Best €/TB from a week or more back, ignoring points on a superseded basis."""
+    return next((h["best_eur_per_tb"] for h in reversed(history)
+                 if h["date"] <= week_ago and "best_eur_per_tb" in h
+                 and h.get("basis") == HISTORY_BASIS), None)
+
+
 def is_weekly_run():
     # Sends weekly summary on Mondays
     return datetime.now().weekday() == 0
 
 
 # One line, once per message -- not per deal, which is what made it unreadable.
-EUR_NOTE = ("\n\n<i>EUR ex-VAT, converted at ECB rates. A non-EUR shop's own page "
-            "will show a different number.</i>")
+EUR_NOTE = ("\n\n<i>Ranking and the alert threshold use the <b>before tax &amp; "
+            "delivery</b> figure — goods only, EUR ex-VAT. The delivered line adds 21% "
+            "Latvian VAT and delivery to Latvia, for information. A shop's own VAT rate "
+            "never applies: EU orders are reverse-charged and UK is zero-rated for "
+            "export, then charged LV import VAT at the border (plus a courier clearance "
+            "fee, not counted here). Delivery is charged per <b>order</b>, so these "
+            "totals assume one drive; buying several splits it. FX at ECB daily rates, "
+            "re-read every run. \"shop shows\" is the shop's own page price, in its own "
+            "currency and VAT, to check the alert against.</i>")
 
 
 def format_deal(deal, url=None):
-    """One deal, EUR only.
+    """One deal: the delivered EUR total, plus the shop's own numbers to check it.
 
-    Everything is already normalised to EUR ex-VAT for ranking, so the native price
-    is deliberately not shown -- carrying two currencies made every line unreadable.
-    The tradeoff is that a UK shop's own page quotes GBP, so the figure here will
-    not match what the site displays; see the footer note on each message.
+    The headline is always EUR delivered including 21% Latvian VAT, whatever the shop's
+    local rate is -- that is what actually gets paid. The shop's own displayed price and
+    delivery charge follow on their own line, in its own currency, because three of the
+    four shops show gross at their local rate and the alert would otherwise look wildly
+    cheaper than the page, which is exactly the confusion this format exists to end.
     """
-    line = (f"€{deal['eur_per_tb']:.2f}/TB — <b>{deal['name']}</b>\n"
-            f"    €{deal.get('eur_price', 0):.2f} · {deal['tb']:.4g}TB")
+    cur = deal.get("currency", "€")
+    line = f"<b>{deal['name']}</b>"
+
+    # The bar is measured on this figure, so it leads.
+    if deal.get("eur_net_per_tb"):
+        line += (f"\n    <b>€{deal['eur_net_per_tb']:.2f}/TB</b> before tax &amp; "
+                 f"delivery — €{deal['eur_net_price']:.2f}")
+    line += (f"\n    €{deal['eur_per_tb']:.2f}/TB delivered — "
+             f"€{deal.get('eur_price', 0):.2f}")
+
+    # Itemised, and the three parts add up to the delivered total exactly.
+    if deal.get("eur_vat") is not None:
+        delivery = (f"€{deal['eur_delivery']:.2f} delivery" if deal.get("eur_delivery")
+                    else "free delivery")
+        line += (f"\n      goods €{deal['eur_net_price']:.2f} + {delivery} "
+                 f"+ 21% VAT €{deal['eur_vat']:.2f}")
+
     gbps = deal.get("gbps")
-    line += f" · {gbps:.4g}Gbps" if gbps else " · rate unstated"
+    line += f"\n    {deal['tb']:.4g}TB · " + (f"{gbps:.4g}Gbps" if gbps else "rate unstated")
+    if deal.get("shop_price"):
+        ship = deal.get("shop_shipping") or 0
+        line += (f" · shop shows {cur}{deal['shop_price']:.2f}"
+                 + (f" + {cur}{ship:.2f}" if ship else ""))
     url = url or deal.get("url")
     if url:
         line += f" · <a href='{url}'>view</a>"
@@ -625,9 +921,14 @@ def report_watch_failure(state, name, prev, reason, today, weekly, manual):
 
 
 def check_watches(state, weekly, manual):
+    # Re-pulled every run, so a GBP shop is always converted at the day's rate rather
+    # than a stale one. Logged because a bad rate would skew every UK figure at once.
     rates = fetch_eur_rates()
     if not rates:
         print("Proceeding without FX rates: non-EUR watches will be skipped")
+    else:
+        used = {w.get("currency_code", "EUR") for w in WATCHES} - {"EUR"}
+        print("ECB rates: " + ", ".join(f"{c}={rates.get(c)}" for c in sorted(used)))
     leaderboard = []
 
     for watch in WATCHES:
@@ -646,7 +947,13 @@ def check_watches(state, weekly, manual):
                                  today, weekly, manual)
             continue
 
-        ranked = rank_by_price_per_tb(items, watch, rates) if items else []
+        # One request per shop per run, before ranking: delivery is inside every total.
+        shipping = fetch_shipping(watch)
+        print(f"{name}: delivery to Latvia {watch['currency']}{shipping:.2f}"
+              + (f" (free over {watch['currency']}{watch['shipping']['free_over']:.0f})"
+                 if watch.get("shipping", {}).get("free_over") else ""))
+
+        ranked = rank_by_price_per_tb(items, watch, rates, shipping) if items else []
         if not ranked:
             reason = ("scrape returned no products" if not items
                       else f"{len(items)} product(s) scraped, none matched the filters")
@@ -658,9 +965,11 @@ def check_watches(state, weekly, manual):
             send_telegram(f"✅ <b>{name} recovered</b>\n\n"
                           f"Scraping again after failing since {prev['failing_since']}.")
 
-        qualifying = [d for d in ranked if d["eur_per_tb"] <= threshold]
+        qualifying = [d for d in ranked if qualifies(d, threshold)]
         print(f"{name}: {len(ranked)} matched, {len(qualifying)} under "
-              f"€{threshold:.2f}/TB, best €{ranked[0]['eur_per_tb']:.2f}/TB")
+              f"€{threshold:.2f}/TB before tax & delivery, "
+              f"best €{ranked[0]['eur_net_per_tb']:.2f}/TB "
+              f"(€{ranked[0]['eur_per_tb']:.2f}/TB delivered)")
 
         known = prev.get("deals", {})
         first_run = not prev
@@ -671,8 +980,10 @@ def check_watches(state, weekly, manual):
             if before is None:
                 new_deals.append(deal)
             else:
-                old = before.get("eur_per_tb")
-                if old and (old - deal["eur_per_tb"]) / old >= PRICE_CHANGE_THRESHOLD:
+                # Compared before tax and delivery, so a shop editing its delivery
+                # table can never masquerade as a price drop.
+                old = before.get("eur_net_per_tb")
+                if old and (old - deal["eur_net_per_tb"]) / old >= PRICE_CHANGE_THRESHOLD:
                     dropped.append((deal, old))
 
         # Resolve product URLs only for the handful we actually put in a message --
@@ -718,18 +1029,20 @@ def check_watches(state, weekly, manual):
             body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in qualifying[:10])
             send_telegram(
                 f"🆕 <b>{name} — now watching</b>\n\n"
-                f"{len(qualifying)} drive(s) at or under €{threshold:.2f}/TB:\n\n{body}"
+                f"{len(qualifying)} drive(s) at or under €{threshold:.2f}/TB "
+                f"before tax & delivery:\n\n{body}"
                 + EUR_NOTE
             )
         else:
             if new_deals:
                 body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in new_deals[:10])
                 send_telegram(
-                    f"💰 <b>New deal under €{threshold:.2f}/TB</b>\n\n"
+                    f"💰 <b>New deal under €{threshold:.2f}/TB before tax "
+                    f"&amp; delivery</b>\n\n"
                     f"<i>{name}</i>\n\n{body}" + EUR_NOTE
                 )
             for deal, old in dropped[:10]:
-                pct = ((deal["eur_per_tb"] - old) / old) * 100
+                pct = ((deal["eur_net_per_tb"] - old) / old) * 100
                 send_telegram(
                     f"📉 <b>Price drop</b>\n\n<i>{name}</i>\n\n"
                     f"{format_deal(deal, urls.get(deal['sku']))}\n"
@@ -741,51 +1054,56 @@ def check_watches(state, weekly, manual):
             send_telegram(
                 f"ℹ️ <b>Manual check — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
-                f"€{threshold:.2f}/TB\n\nBest value right now:\n\n{body}" + EUR_NOTE
+                f"€{threshold:.2f}/TB before tax &amp; delivery\n\nBest value right now:\n\n{body}" + EUR_NOTE
             )
 
         history = prev.get("history", [])
         history.append({"date": datetime.now().strftime("%Y-%m-%d"),
-                        "best_eur_per_tb": ranked[0]["eur_per_tb"],
-                        "matched": len(ranked)})
+                        "best_eur_per_tb": ranked[0]["eur_net_per_tb"],
+                        "matched": len(ranked),
+                        "basis": HISTORY_BASIS})
         history = history[-30:]
 
         if weekly:
             week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-            was = next((h["best_eur_per_tb"] for h in reversed(history)
-                        if h["date"] <= week_ago and "best_eur_per_tb" in h), None)
+            was = trend_baseline(history, week_ago)
             body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in ranked[:5])
             trend = ""
             if was:
-                diff = ranked[0]["eur_per_tb"] - was
+                diff = ranked[0]["eur_net_per_tb"] - was
                 arrow = "📉" if diff < 0 else ("📈" if diff > 0 else "➡️")
                 trend = (f"Best €/TB 7 days ago: €{was:.2f}\n"
                          f"Change: {arrow} {diff:+.2f}\n\n")
             send_telegram(
                 f"📊 <b>Weekly Report — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
-                f"€{threshold:.2f}/TB\n{trend}"
+                f"€{threshold:.2f}/TB before tax &amp; delivery\n{trend}"
                 f"Best value right now:\n\n{body}" + EUR_NOTE
             )
 
         state["watches"][name] = {
             "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "best_eur_per_tb": ranked[0]["eur_per_tb"],
+            "best_eur_per_tb": ranked[0]["eur_net_per_tb"],
             "matched": len(ranked),
             "threshold": threshold,
             # Only qualifying deals are remembered, so a drive that lapses above
             # the threshold and later returns will alert again.
-            # Native price/per_tb are kept in state for auditing even though alerts
-            # only ever show EUR, so a suspicious figure can be traced back.
+            # Native price/per_tb and the shop's own shelf price are kept in state for
+            # auditing, so a suspicious alert can be traced straight back to the page.
             "deals": {d["sku"]: {"name": d["name"], "price": d["price"], "tb": d["tb"],
                                  "per_tb": d["per_tb"], "eur_price": d["eur_price"],
-                                 "eur_per_tb": d["eur_per_tb"]}
+                                 "eur_per_tb": d["eur_per_tb"],
+                                 "eur_net_price": d.get("eur_net_price"),
+                                 "eur_net_per_tb": d.get("eur_net_per_tb"),
+                                 "eur_shipping": d.get("eur_shipping"),
+                                 "shop_price": d.get("shop_price"),
+                                 "shop_shipping": d.get("shop_shipping")}
                       for d in qualifying},
             "history": history,
         }
 
     if leaderboard and (weekly or manual):
-        leaderboard.sort(key=lambda row: row[1]["eur_per_tb"])
+        leaderboard.sort(key=lambda row: row[1]["eur_net_per_tb"])
         body = "\n\n".join(
             f"{format_deal(deal)}\n    <i>{shop}</i>"
             for shop, deal in leaderboard[:10]
