@@ -2,7 +2,7 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-08-23 09:26",
+      "last_checked": "2026-08-24 09:45",
       "best_eur_per_tb": 21.97,
       "matched": 50,
       "threshold": 25.0,
@@ -206,34 +206,26 @@
           "best_eur_per_tb": 21.97,
           "matched": 50,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-24",
+          "best_eur_per_tb": 21.97,
+          "matched": 50,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-08-23 09:26",
+      "last_checked": "2026-08-24 09:45",
       "failing_since": "2026-08-01",
       "last_error": "scrape returned no products"
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-08-23 09:27",
-      "best_eur_per_tb": 18.01,
-      "matched": 3,
+      "last_checked": "2026-08-24 09:45",
+      "best_eur_per_tb": 25.21,
+      "matched": 2,
       "threshold": 25.0,
-      "deals": {
-        "50861": {
-          "name": "TOSHIBA MG07ACA 14TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - MG07ACA14TE",
-          "price": 252.09,
-          "tb": 14.0,
-          "per_tb": 18.01,
-          "eur_price": 323.32,
-          "eur_per_tb": 23.09,
-          "eur_net_price": 252.09,
-          "eur_net_per_tb": 18.01,
-          "eur_shipping": null,
-          "shop_price": 299.99,
-          "shop_shipping": 17.99
-        }
-      },
+      "deals": {},
       "history": [
         {
           "date": "2026-08-01",
@@ -367,11 +359,17 @@
           "best_eur_per_tb": 18.01,
           "matched": 3,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-24",
+          "best_eur_per_tb": 25.21,
+          "matched": 2,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-08-23 09:27",
+      "last_checked": "2026-08-24 09:45",
       "best_eur_per_tb": 20.45,
       "matched": 6,
       "threshold": 25.0,
@@ -533,6 +531,12 @@
         },
         {
           "date": "2026-08-23",
+          "best_eur_per_tb": 20.45,
+          "matched": 6,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-24",
           "best_eur_per_tb": 20.45,
           "matched": 6,
           "basis": "eur_incl_lv_vat"
