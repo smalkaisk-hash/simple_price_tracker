@@ -2,9 +2,9 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-08-25 09:34",
+      "last_checked": "2026-08-26 09:39",
       "best_eur_per_tb": 22.0,
-      "matched": 50,
+      "matched": 52,
       "threshold": 25.0,
       "deals": {
         "HUH721212ALE600-WD": {
@@ -192,11 +192,17 @@
           "best_eur_per_tb": 22.0,
           "matched": 50,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-26",
+          "best_eur_per_tb": 22.0,
+          "matched": 52,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-08-25 09:37",
+      "last_checked": "2026-08-26 09:44",
       "best_eur_per_tb": 26.25,
       "matched": 13,
       "threshold": 25.0,
@@ -207,11 +213,17 @@
           "best_eur_per_tb": 26.25,
           "matched": 13,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-26",
+          "best_eur_per_tb": 26.25,
+          "matched": 13,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-08-25 09:37",
+      "last_checked": "2026-08-26 09:44",
       "best_eur_per_tb": 25.21,
       "matched": 2,
       "threshold": 25.0,
@@ -361,28 +373,21 @@
           "best_eur_per_tb": 25.21,
           "matched": 2,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-26",
+          "best_eur_per_tb": 25.21,
+          "matched": 2,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-08-25 09:37",
-      "best_eur_per_tb": 20.45,
-      "matched": 6,
+      "last_checked": "2026-08-26 09:44",
+      "best_eur_per_tb": 22.83,
+      "matched": 7,
       "threshold": 25.0,
       "deals": {
-        "50019331": {
-          "name": "Hitachi SATA Hard Drive 6TB 7.2k SATA 6G 3.5\" - HUS726060ALE610 0F23001",
-          "price": 122.69,
-          "tb": 6.0,
-          "per_tb": 20.45,
-          "eur_price": 173.83,
-          "eur_per_tb": 28.97,
-          "eur_net_price": 122.69,
-          "eur_net_per_tb": 20.45,
-          "eur_shipping": null,
-          "shop_price": 146.0,
-          "shop_shipping": 24.95
-        },
         "50024273": {
           "name": "HPE 18TB 7.2k 3.5\" LFF 6G SATA Hard Drive - P38440-001 P37678-B21 MB018000GYDKR",
           "price": 410.92,
@@ -541,6 +546,12 @@
           "date": "2026-08-25",
           "best_eur_per_tb": 20.45,
           "matched": 6,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-26",
+          "best_eur_per_tb": 22.83,
+          "matched": 7,
           "basis": "eur_incl_lv_vat"
         }
       ]
