@@ -2,48 +2,48 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-08-26 09:39",
-      "best_eur_per_tb": 22.0,
-      "matched": 52,
+      "last_checked": "2026-08-27 19:27",
+      "best_eur_per_tb": 22.25,
+      "matched": 51,
       "threshold": 25.0,
       "deals": {
         "HUH721212ALE600-WD": {
           "name": "Western Digital HUH721212ALE600 12TB 6Gbps 3.5inch SATA 7.2K HDD",
-          "price": 225.85,
+          "price": 228.94,
           "tb": 12.0,
-          "per_tb": 18.82,
-          "eur_price": 354.8,
-          "eur_per_tb": 29.57,
-          "eur_net_price": 264.0,
-          "eur_net_per_tb": 22.0,
+          "per_tb": 19.08,
+          "eur_price": 358.38,
+          "eur_per_tb": 29.86,
+          "eur_net_price": 267.02,
+          "eur_net_per_tb": 22.25,
           "eur_shipping": null,
-          "shop_price": 271.02,
+          "shop_price": 274.73,
           "shop_shipping": 30.0
         },
         "ST10000VX0004-SEAGATE": {
           "name": "Seagate ST10000VX0004 10TB 6Gbps 3.5inch SATA 7.2K HDD",
-          "price": 205.31,
+          "price": 208.13,
           "tb": 10.0,
-          "per_tb": 20.53,
-          "eur_price": 325.74,
-          "eur_per_tb": 32.57,
-          "eur_net_price": 239.99,
-          "eur_net_per_tb": 24.0,
+          "per_tb": 20.81,
+          "eur_price": 329.01,
+          "eur_per_tb": 32.9,
+          "eur_net_price": 242.75,
+          "eur_net_per_tb": 24.27,
           "eur_shipping": null,
-          "shop_price": 246.37,
+          "shop_price": 249.76,
           "shop_shipping": 30.0
         },
         "WD40EURX-WD": {
           "name": "Western Digital WD40EURX 4TB 6Gbps 3.5inch SATA 5.4K HDD",
-          "price": 83.95,
+          "price": 85.1,
           "tb": 4.0,
-          "per_tb": 20.99,
-          "eur_price": 154.09,
-          "eur_per_tb": 38.52,
-          "eur_net_price": 98.13,
-          "eur_net_per_tb": 24.53,
+          "per_tb": 21.27,
+          "eur_price": 155.38,
+          "eur_per_tb": 38.84,
+          "eur_net_price": 99.25,
+          "eur_net_per_tb": 24.81,
           "eur_shipping": null,
-          "shop_price": 100.74,
+          "shop_price": 102.12,
           "shop_shipping": 30.0
         }
       },
@@ -198,11 +198,17 @@
           "best_eur_per_tb": 22.0,
           "matched": 52,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-27",
+          "best_eur_per_tb": 22.25,
+          "matched": 51,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-08-26 09:44",
+      "last_checked": "2026-08-27 19:31",
       "best_eur_per_tb": 26.25,
       "matched": 13,
       "threshold": 25.0,
@@ -219,15 +225,35 @@
           "best_eur_per_tb": 26.25,
           "matched": 13,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-27",
+          "best_eur_per_tb": 26.25,
+          "matched": 13,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-08-26 09:44",
-      "best_eur_per_tb": 25.21,
-      "matched": 2,
+      "last_checked": "2026-08-27 19:31",
+      "best_eur_per_tb": 20.07,
+      "matched": 3,
       "threshold": 25.0,
-      "deals": {},
+      "deals": {
+        "54701": {
+          "name": "HPE 18TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk with Low Profile Carrier - P38440-001 / P37678-B21",
+          "price": 361.34,
+          "tb": 18.0,
+          "per_tb": 20.07,
+          "eur_price": 455.52,
+          "eur_per_tb": 25.31,
+          "eur_net_price": 361.34,
+          "eur_net_per_tb": 20.07,
+          "eur_shipping": null,
+          "shop_price": 429.99,
+          "shop_shipping": 17.99
+        }
+      },
       "history": [
         {
           "date": "2026-08-01",
@@ -379,11 +405,17 @@
           "best_eur_per_tb": 25.21,
           "matched": 2,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-27",
+          "best_eur_per_tb": 20.07,
+          "matched": 3,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-08-26 09:44",
+      "last_checked": "2026-08-27 19:32",
       "best_eur_per_tb": 22.83,
       "matched": 7,
       "threshold": 25.0,
@@ -550,6 +582,12 @@
         },
         {
           "date": "2026-08-26",
+          "best_eur_per_tb": 22.83,
+          "matched": 7,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-08-27",
           "best_eur_per_tb": 22.83,
           "matched": 7,
           "basis": "eur_incl_lv_vat"
