@@ -63,6 +63,10 @@ WATCHES = [
         "allow_unstated_gbps": True,  # see transfer_gbps(); set False to require it
         "max_pages": 80,
         "sitemap": "https://www.techbuyer.com/sitemap.xml",
+        # The GA4 feed carries no product URL, so links are rebuilt from the sitemap.
+        # A SKU the sitemap doesn't list (Synology drives, for one) would otherwise
+        # alert with no link at all, so fall back to its Magento search page.
+        "search_url": "https://www.techbuyer.com/uk/catalogsearch/result/?q={q}",
         # Techbuyer's category HTML carries no stock field, so stock is confirmed
         # per-product just before alerting. The EU shops publish it in the listing.
         "verify_stock": True,
@@ -200,14 +204,20 @@ LD_AVAIL_RE = re.compile(r'"availability"\s*:\s*"[^"]*?(InStock|OutOfStock|BackO
 # it entirely. The G(?![Bb]) branch catches the bare form without also matching the
 # "GB" of a capacity like "300GB".
 GBPS_RE = re.compile(r'(\d+(?:\.\d+)?)\s*(?:Gbps|Gb/s|G(?![Bb]))\b', re.I)
-# SATA tops out at 6 Gbps, so a SATA listing claiming more is a mislabelled spec
-# (12 Gbps is SAS). The drive is really 6 Gbps, so clamp rather than exclude.
+# SATA tops out at 6 Gbps. A SATA listing claiming a higher rate (12 Gbps is SAS-3)
+# is not a fast SATA drive -- it is a SAS drive the shop mislabelled, and a SAS drive
+# will not run in a SATA-only port. So a stated rate above this ceiling drops the
+# drive (see rank_by_price_per_tb) rather than being clamped down into the results.
 SATA_MAX_GBPS = 6.0
 
 # Multipacks would otherwise be read as one cheap drive at N times the real price.
 LOT_RE = re.compile(r'\b(lot\s+of|bundle|\d+\s*x\s*\d|pack\s+of|qty\s*\d+)\b', re.I)
 # SATA is also an SSD interface; these listings are not what this tracker is for.
 SSD_RE = re.compile(r'\b(SSD|solid[\s-]state|NVMe|M\.2)\b', re.I)
+# A drive that names SAS outright is a SAS drive even if the title also says SATA
+# (some shops do). The name_filter already requires SATA, so this drops the handful
+# that claim both. Catches "SAS", "NL-SAS" and "SAS-3" alike.
+SAS_RE = re.compile(r'\bSAS\b', re.I)
 
 
 def fetch_eur_rates():
@@ -669,12 +679,16 @@ def rank_by_price_per_tb(items, watch, rates, shipping=0.0):
             continue  # bundles and call-for-price items
         if not pattern.search(name):
             continue
-        if SSD_RE.search(name) or LOT_RE.search(name):
+        if SSD_RE.search(name) or LOT_RE.search(name) or SAS_RE.search(name):
             continue
         tb = capacity_tb(name)
         if not tb or tb < min_tb:
             continue
-        gbps = transfer_gbps(name)
+        # Read the rate unclamped so a SAS speed can be spotted: SATA never exceeds
+        # 6Gbps, so a title stating more is a mislabelled SAS drive and is dropped.
+        gbps = transfer_gbps(name, cap=None)
+        if gbps is not None and gbps > SATA_MAX_GBPS:
+            continue
         if min_gbps:
             if gbps is None:
                 # Most unstated drives are multi-TB SATA III that just omit the rate
@@ -990,7 +1004,11 @@ def check_watches(state, weekly, manual):
         # the sitemap is ~2MB and matching is linear, so this stays off the daily path.
         # Shops whose listings carry their own product link skip this entirely.
         alerting = new_deals + [d for d, _ in dropped]
-        need_urls = alerting + (ranked[:5] if (manual or weekly) else [])
+        # Summaries (manual, weekly, leaderboard) now list only qualifying drives, so
+        # resolve links for those rather than the best-5 regardless of the bar. Deduped
+        # by SKU so a drive that is both an alert and a summary entry is resolved once.
+        summary = qualifying if (manual or weekly) else []
+        need_urls = list({d["sku"]: d for d in (alerting + summary)}.values())
         index = (load_sitemap_index(watch["sitemap"])
                  if need_urls and watch.get("sitemap") else [])
         urls = resolve_urls(watch, need_urls, index)
@@ -1020,10 +1038,11 @@ def check_watches(state, weekly, manual):
                     continue
 
         # The leaderboard formats deals without the urls dict in scope, so fold the
-        # resolved link onto the deal itself or sitemap-linked shops lose theirs.
-        for d in ranked[:5]:
+        # resolved link onto the deal itself or sitemap-linked shops lose theirs. Only
+        # qualifying drives go on the board, so it never lists anything over the bar.
+        for d in qualifying:
             d["url"] = urls.get(d["sku"]) or d.get("url")
-        leaderboard.extend((name, d) for d in ranked[:5])
+        leaderboard.extend((name, d) for d in qualifying)
 
         if first_run and qualifying:
             body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in qualifying[:10])
@@ -1050,11 +1069,16 @@ def check_watches(state, weekly, manual):
                 )
 
         if manual and not first_run:
-            body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in ranked[:5])
+            if qualifying:
+                body = ("Best value right now:\n\n"
+                        + "\n\n".join(format_deal(d, urls.get(d["sku"]))
+                                      for d in qualifying[:10]))
+            else:
+                body = f"Nothing under €{threshold:.2f}/TB right now."
             send_telegram(
                 f"ℹ️ <b>Manual check — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
-                f"€{threshold:.2f}/TB before tax &amp; delivery\n\nBest value right now:\n\n{body}" + EUR_NOTE
+                f"€{threshold:.2f}/TB before tax &amp; delivery\n\n{body}" + EUR_NOTE
             )
 
         history = prev.get("history", [])
@@ -1067,18 +1091,23 @@ def check_watches(state, weekly, manual):
         if weekly:
             week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             was = trend_baseline(history, week_ago)
-            body = "\n\n".join(format_deal(d, urls.get(d["sku"])) for d in ranked[:5])
             trend = ""
             if was:
                 diff = ranked[0]["eur_net_per_tb"] - was
                 arrow = "📉" if diff < 0 else ("📈" if diff > 0 else "➡️")
                 trend = (f"Best €/TB 7 days ago: €{was:.2f}\n"
                          f"Change: {arrow} {diff:+.2f}\n\n")
+            if qualifying:
+                body = ("Best value right now:\n\n"
+                        + "\n\n".join(format_deal(d, urls.get(d["sku"]))
+                                      for d in qualifying[:10]))
+            else:
+                body = f"Nothing under €{threshold:.2f}/TB right now."
             send_telegram(
                 f"📊 <b>Weekly Report — {name}</b>\n\n"
                 f"{len(ranked)} drives tracked, {len(qualifying)} under "
                 f"€{threshold:.2f}/TB before tax &amp; delivery\n{trend}"
-                f"Best value right now:\n\n{body}" + EUR_NOTE
+                f"{body}" + EUR_NOTE
             )
 
         state["watches"][name] = {

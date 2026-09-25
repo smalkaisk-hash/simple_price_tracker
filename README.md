@@ -122,8 +122,12 @@ cent on all 130 catalogue items; `test_tracker.py` pins this.
 - `min_gbps` — SATA III only. Titles spell the rate as `6Gbps`, `6 Gbps`, `6Gb/s`
   or a bare `6G`, and some omit it; `allow_unstated_gbps` keeps the silent ones,
   which matters because the cheapest drive on Techbuyer's listing is one of them.
-  A SATA listing claiming >6 Gbps is a mislabelled spec and gets clamped.
 - Lots/multipacks and SSDs are dropped — both would otherwise read as cheap HDDs.
+- **SAS drives are dropped**, even when the shop puts `SATA` in the title. A SAS
+  drive will not run in a SATA-only port, so it must never be recommended. Two tells
+  catch it: the word `SAS` in the title, or a stated rate above SATA's 6 Gbps ceiling
+  (12 Gbps is SAS-3). Techbuyer's `Dell FN7VR 12TB … SATA … 12Gbps` was one such
+  mislabel that used to reach the summaries; `test_tracker.py` pins both checks.
 
 ## Stock
 
@@ -133,8 +137,9 @@ looked 3× cheaper than everyone, and every one of those listings was unavailabl
 
 Renewtech, ServerShop24 and Gekko publish stock in the listing itself. Techbuyer
 does not, so watches with `verify_stock` do a per-product check at alert time —
-covering both the alert candidates and the ranked list behind the weekly report,
-so a sold-out drive cannot be recommended in either. Only an *explicit* out-of-stock
+covering both the alert candidates and the qualifying drives behind the weekly and
+manual reports, so a sold-out drive cannot be recommended in either. Only an
+*explicit* out-of-stock
 is dropped; unknown stays in, so a markup change degrades to over-alerting rather
 than silently hiding everything.
 
@@ -144,6 +149,10 @@ Product URLs are resolved per shop, best source first: scraped from the listing
 (Gekko, ServerShop24) > sitemap lookup (Techbuyer) > reconstructed from the title
 (Renewtech, whose grid is JS-rendered with no anchors) > the shop's search page.
 Reconstructed URLs are checked before they go in a message.
+
+Techbuyer's GA4 feed carries no product URL, so its links are rebuilt entirely from
+the sitemap; a SKU the sitemap doesn't list (Synology drives, for one) falls back to
+its search page rather than appearing with no link at all.
 
 ## Failure reporting
 
