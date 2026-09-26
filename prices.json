@@ -2,9 +2,9 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-09-25 14:26",
+      "last_checked": "2026-09-26 13:38",
       "best_eur_per_tb": 20.43,
-      "matched": 51,
+      "matched": 50,
       "threshold": 25.0,
       "deals": {
         "793667-B21-HP": {
@@ -22,12 +22,6 @@
         }
       },
       "history": [
-        {
-          "date": "2026-08-27",
-          "best_eur_per_tb": 22.25,
-          "matched": 51,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-08-28",
           "best_eur_per_tb": 22.26,
@@ -201,22 +195,22 @@
           "best_eur_per_tb": 20.43,
           "matched": 51,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-09-26",
+          "best_eur_per_tb": 20.43,
+          "matched": 50,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-09-25 14:30",
+      "last_checked": "2026-09-26 13:42",
       "best_eur_per_tb": 26.25,
       "matched": 17,
       "threshold": 25.0,
       "deals": {},
       "history": [
-        {
-          "date": "2026-08-27",
-          "best_eur_per_tb": 26.25,
-          "matched": 13,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-08-28",
           "best_eur_per_tb": 26.25,
@@ -390,15 +384,47 @@
           "best_eur_per_tb": 26.25,
           "matched": 17,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-09-26",
+          "best_eur_per_tb": 26.25,
+          "matched": 17,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-09-25 14:30",
-      "best_eur_per_tb": 20.07,
-      "matched": 3,
+      "last_checked": "2026-09-26 13:42",
+      "best_eur_per_tb": 11.55,
+      "matched": 5,
       "threshold": 25.0,
       "deals": {
+        "51440": {
+          "name": "DELL 4TB 6G 7.2K SATA (512n) 3.5\" LFF Festplatte / Hard Disk with 11G/13G Carrier - 061FFW / 61FFW",
+          "price": 46.21,
+          "tb": 4.0,
+          "per_tb": 11.55,
+          "eur_price": 74.21,
+          "eur_per_tb": 18.55,
+          "eur_net_price": 46.21,
+          "eur_net_per_tb": 11.55,
+          "eur_shipping": null,
+          "shop_price": 54.99,
+          "shop_shipping": 17.99
+        },
+        "51436": {
+          "name": "DELL EMC 4TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk with 14G Carrier - 0MWHY9 / MWHY9",
+          "price": 54.61,
+          "tb": 4.0,
+          "per_tb": 13.65,
+          "eur_price": 84.37,
+          "eur_per_tb": 21.09,
+          "eur_net_price": 54.61,
+          "eur_net_per_tb": 13.65,
+          "eur_shipping": null,
+          "shop_price": 64.99,
+          "shop_shipping": 17.99
+        },
         "54701": {
           "name": "HPE 18TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk with Low Profile Carrier - P38440-001 / P37678-B21",
           "price": 361.34,
@@ -414,12 +440,6 @@
         }
       },
       "history": [
-        {
-          "date": "2026-08-27",
-          "best_eur_per_tb": 20.07,
-          "matched": 3,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-08-28",
           "best_eur_per_tb": 20.07,
@@ -593,22 +613,22 @@
           "best_eur_per_tb": 20.07,
           "matched": 3,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-09-26",
+          "best_eur_per_tb": 11.55,
+          "matched": 5,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-09-25 14:30",
+      "last_checked": "2026-09-26 13:42",
       "best_eur_per_tb": 27.31,
       "matched": 7,
       "threshold": 25.0,
       "deals": {},
       "history": [
-        {
-          "date": "2026-08-27",
-          "best_eur_per_tb": 22.83,
-          "matched": 7,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-08-28",
           "best_eur_per_tb": 22.83,
@@ -779,6 +799,12 @@
         },
         {
           "date": "2026-09-25",
+          "best_eur_per_tb": 27.31,
+          "matched": 7,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-09-26",
           "best_eur_per_tb": 27.31,
           "matched": 7,
           "basis": "eur_incl_lv_vat"
