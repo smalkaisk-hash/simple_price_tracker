@@ -2,7 +2,7 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-10-05 17:51",
+      "last_checked": "2026-10-06 15:40",
       "best_eur_per_tb": 20.78,
       "matched": 48,
       "threshold": 25.0,
@@ -207,18 +207,26 @@
       "last_error": "scrape returned no products"
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-10-05 17:54",
-      "best_eur_per_tb": 31.5,
-      "matched": 12,
+      "last_checked": "2026-10-06 15:43",
+      "best_eur_per_tb": 19.25,
+      "matched": 13,
       "threshold": 25.0,
-      "deals": {},
+      "deals": {
+        "344974": {
+          "name": "WESTERN DIGITAL WD40EFRX-WD - 4TB 5.4K LFF SATA 6G WD40EFRX",
+          "price": 77,
+          "tb": 4.0,
+          "per_tb": 19.25,
+          "eur_price": 117.37,
+          "eur_per_tb": 29.34,
+          "eur_net_price": 77,
+          "eur_net_per_tb": 19.25,
+          "eur_shipping": null,
+          "shop_price": 77.0,
+          "shop_shipping": 20.0
+        }
+      },
       "history": [
-        {
-          "date": "2026-09-06",
-          "best_eur_per_tb": 26.25,
-          "matched": 16,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-07",
           "best_eur_per_tb": 26.25,
@@ -392,11 +400,17 @@
           "best_eur_per_tb": 31.5,
           "matched": 12,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-06",
+          "best_eur_per_tb": 19.25,
+          "matched": 13,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-10-05 17:54",
+      "last_checked": "2026-10-06 15:43",
       "best_eur_per_tb": 20.07,
       "matched": 5,
       "threshold": 25.0,
@@ -414,19 +428,6 @@
           "shop_price": 429.99,
           "shop_shipping": 17.99
         },
-        "54821": {
-          "name": "Seagate Exos 22TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - ST22000NM000C",
-          "price": 462.18,
-          "tb": 22.0,
-          "per_tb": 21.01,
-          "eur_price": 577.53,
-          "eur_per_tb": 26.25,
-          "eur_net_price": 462.18,
-          "eur_net_per_tb": 21.01,
-          "eur_shipping": null,
-          "shop_price": 549.99,
-          "shop_shipping": 17.99
-        },
         "54795": {
           "name": "FUJITSU 10TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk with M-Series Carrier - 10602111359",
           "price": 210.08,
@@ -439,15 +440,22 @@
           "eur_shipping": null,
           "shop_price": 249.99,
           "shop_shipping": 17.99
+        },
+        "54821": {
+          "name": "Seagate Exos 22TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - ST22000NM000C",
+          "price": 462.18,
+          "tb": 22.0,
+          "per_tb": 21.01,
+          "eur_price": 577.53,
+          "eur_per_tb": 26.25,
+          "eur_net_price": 462.18,
+          "eur_net_per_tb": 21.01,
+          "eur_shipping": null,
+          "shop_price": 549.99,
+          "shop_shipping": 17.99
         }
       },
       "history": [
-        {
-          "date": "2026-09-06",
-          "best_eur_per_tb": 20.07,
-          "matched": 4,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-07",
           "best_eur_per_tb": 20.07,
@@ -621,22 +629,22 @@
           "best_eur_per_tb": 20.07,
           "matched": 5,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-06",
+          "best_eur_per_tb": 20.07,
+          "matched": 5,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-10-05 17:55",
+      "last_checked": "2026-10-06 15:44",
       "best_eur_per_tb": 28.26,
-      "matched": 7,
+      "matched": 6,
       "threshold": 25.0,
       "deals": {},
       "history": [
-        {
-          "date": "2026-09-06",
-          "best_eur_per_tb": 27.31,
-          "matched": 6,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-07",
           "best_eur_per_tb": 27.31,
@@ -809,6 +817,12 @@
           "date": "2026-10-05",
           "best_eur_per_tb": 28.26,
           "matched": 7,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-06",
+          "best_eur_per_tb": 28.26,
+          "matched": 6,
           "basis": "eur_incl_lv_vat"
         }
       ]
