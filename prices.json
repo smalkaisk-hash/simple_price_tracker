@@ -2,7 +2,7 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-10-06 15:40",
+      "last_checked": "2026-10-07 16:04",
       "best_eur_per_tb": 20.78,
       "matched": 48,
       "threshold": 25.0,
@@ -207,9 +207,9 @@
       "last_error": "scrape returned no products"
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-10-06 15:43",
+      "last_checked": "2026-10-07 16:08",
       "best_eur_per_tb": 19.25,
-      "matched": 13,
+      "matched": 15,
       "threshold": 25.0,
       "deals": {
         "344974": {
@@ -227,12 +227,6 @@
         }
       },
       "history": [
-        {
-          "date": "2026-09-07",
-          "best_eur_per_tb": 26.25,
-          "matched": 16,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-08",
           "best_eur_per_tb": 26.25,
@@ -406,13 +400,19 @@
           "best_eur_per_tb": 19.25,
           "matched": 13,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-07",
+          "best_eur_per_tb": 19.25,
+          "matched": 15,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-10-06 15:43",
+      "last_checked": "2026-10-07 16:08",
       "best_eur_per_tb": 20.07,
-      "matched": 5,
+      "matched": 4,
       "threshold": 25.0,
       "deals": {
         "54701": {
@@ -440,28 +440,9 @@
           "eur_shipping": null,
           "shop_price": 249.99,
           "shop_shipping": 17.99
-        },
-        "54821": {
-          "name": "Seagate Exos 22TB 6G 7.2K SATA (512e) 3.5\" LFF Festplatte / Hard Disk - ST22000NM000C",
-          "price": 462.18,
-          "tb": 22.0,
-          "per_tb": 21.01,
-          "eur_price": 577.53,
-          "eur_per_tb": 26.25,
-          "eur_net_price": 462.18,
-          "eur_net_per_tb": 21.01,
-          "eur_shipping": null,
-          "shop_price": 549.99,
-          "shop_shipping": 17.99
         }
       },
       "history": [
-        {
-          "date": "2026-09-07",
-          "best_eur_per_tb": 20.07,
-          "matched": 4,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-08",
           "best_eur_per_tb": 20.07,
@@ -635,22 +616,22 @@
           "best_eur_per_tb": 20.07,
           "matched": 5,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-07",
+          "best_eur_per_tb": 20.07,
+          "matched": 4,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-10-06 15:44",
+      "last_checked": "2026-10-07 16:08",
       "best_eur_per_tb": 28.26,
       "matched": 6,
       "threshold": 25.0,
       "deals": {},
       "history": [
-        {
-          "date": "2026-09-07",
-          "best_eur_per_tb": 27.31,
-          "matched": 6,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-08",
           "best_eur_per_tb": 27.31,
@@ -821,6 +802,12 @@
         },
         {
           "date": "2026-10-06",
+          "best_eur_per_tb": 28.26,
+          "matched": 6,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-07",
           "best_eur_per_tb": 28.26,
           "matched": 6,
           "basis": "eur_incl_lv_vat"
