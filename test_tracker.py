@@ -4,6 +4,7 @@ No network: every fixture is a trimmed copy of markup captured from the live sho
 so a shop changing its HTML shows up as a failing test rather than a wrong alert.
 """
 import unittest
+from unittest import mock
 
 import tracker
 
@@ -339,6 +340,221 @@ class TestCostBreakdown(unittest.TestCase):
         text = tracker.format_deal(self._deal(SERVERSHOP, 252.09, 17.99))
         for part in ("eur_net_price", "eur_delivery", "eur_vat", "eur_price"):
             self.assertIn(f"{self._deal(SERVERSHOP, 252.09, 17.99)[part]:.2f}", text, part)
+
+
+class TestInterfaceSpeed(unittest.TestCase):
+    """SATA tops out at 6Gbps; a title claiming more is a mislabelled SAS drive.
+    The reader must also not pick a "speed" out of a part number like 7GM2H."""
+
+    def test_bare_6g_is_read(self):
+        self.assertEqual(tracker.transfer_gbps("HGST 8TB SATA 6G 3.5\"", cap=None), 6.0)
+
+    def test_gbps_form_is_read(self):
+        self.assertEqual(tracker.transfer_gbps("Dell 12TB SATA 12Gbps HDD", cap=None), 12.0)
+
+    def test_a_part_number_is_not_mistaken_for_a_speed(self):
+        """'7GM2H' is a model, not a 7Gbps interface -- the real rate here is 6Gbps."""
+        name = "Dell 7GM2H 24TB 3.5in SATA 7.2K 6Gbps HDD"
+        self.assertEqual(tracker.transfer_gbps(name, cap=None), 6.0)
+
+    def test_capacity_is_never_read_as_a_speed(self):
+        self.assertIsNone(tracker.transfer_gbps("Seagate 8TB 7.2K SATA HDD", cap=None))
+
+
+class TestSasIsNotSata(unittest.TestCase):
+    """A SAS drive must never be alerted on a SATA watch, even when the shop puts
+    'SATA' in the title. The tell is an interface rate above SATA's 6Gbps ceiling."""
+
+    def _rank(self, name):
+        return tracker.rank_by_price_per_tb(
+            [{"item_id": "X", "item_name": name, "price": 400.0, "in_stock": True}],
+            SERVERSHOP, RATES)
+
+    def test_a_12gbps_sata_labelled_drive_is_dropped_as_sas(self):
+        # Real Techbuyer listing: SATA in the title, 12Gbps (SAS-3) in the same title.
+        self.assertEqual(self._rank("Dell FN7VR 12TB 3.5inch SATA 7.2K 12Gbps HDD"), [])
+
+    def test_a_genuine_6gbps_sata_drive_with_a_7g_part_number_survives(self):
+        (d,) = self._rank("Dell 7GM2H 24TB 3.5in SATA 7.2K 6Gbps HDD")
+        self.assertEqual(d["gbps"], 6.0)
+
+    def test_a_title_naming_sas_outright_is_dropped(self):
+        self.assertEqual(self._rank("Acme 8TB SATA 6G SAS 3.5\" HDD"), [])
+
+
+class TestUrlFallback(unittest.TestCase):
+    """Techbuyer's GA4 feed carries no product URL, so every link is reconstructed
+    from the sitemap. A SKU the sitemap doesn't list must still get *a* link (its
+    search page) rather than an alert with no way to reach the drive."""
+
+    def test_techbuyer_declares_a_search_url_fallback(self):
+        self.assertIn("search_url", TECHBUYER)
+
+    def test_a_sku_missing_from_the_sitemap_still_gets_a_link(self):
+        # Real case: this Synology drive ranked with no sitemap match and no link.
+        deals = [{"sku": "HAT5300-16T-SYNOLOGY",
+                  "name": "Synology 16TB 7.2K SATA Hard Drive", "url": None}]
+        urls = tracker.resolve_urls(TECHBUYER, deals,
+                                    index=[("someotherdrive", "https://x/y")])
+        link = urls["HAT5300-16T-SYNOLOGY"]
+        self.assertIsNotNone(link)
+        self.assertIn("catalogsearch", link)
+
+    def test_the_scraped_or_sitemap_url_still_wins_over_search(self):
+        deals = [{"sku": "WD40EURX", "name": "WD 4TB", "url": None}]
+        urls = tracker.resolve_urls(
+            TECHBUYER, deals, index=[("wd40eurx", "https://techbuyer.com/uk/wd40eurx")])
+        self.assertEqual(urls["WD40EURX"], "https://techbuyer.com/uk/wd40eurx")
+
+
+class TestSummariesHideOverThreshold(unittest.TestCase):
+    """The daily new-deal/price-drop alerts were always gated to drives under the
+    €/TB bar, but the Manual, Weekly and cross-shop leaderboard summaries used to
+    list the best five drives regardless -- so on a quiet day they surfaced drives
+    well over the bar. These summaries must now show only qualifying drives."""
+
+    # A single EUR shop with no sitemap/stock check keeps the harness offline.
+    WATCH = SERVERSHOP
+    NAME = SERVERSHOP["name"]
+    # 20TB @ €480 net = €24.00/TB (under €25); 4TB @ €110 = €27.50/TB (over).
+    ITEMS = [
+        {"item_id": "under", "item_name": "HGST 20TB SATA 6Gbps HDD",
+         "price": 480.0, "in_stock": True, "url": "https://x/under"},
+        {"item_id": "over", "item_name": "Toshiba 4TB SATA 6Gbps HDD",
+         "price": 110.0, "in_stock": True, "url": "https://x/over"},
+    ]
+
+    def _run(self, weekly=False, manual=False, prev=None):
+        state = {"watches": {}, "products": {}}
+        if prev is not None:
+            state["watches"][self.NAME] = prev
+        sent = []
+        with mock.patch.object(tracker, "WATCHES", [self.WATCH]), \
+             mock.patch.object(tracker, "fetch_eur_rates", return_value={}), \
+             mock.patch.object(tracker, "fetch_watch", return_value=self.ITEMS), \
+             mock.patch.object(tracker, "fetch_shipping", return_value=0.0), \
+             mock.patch.object(tracker, "send_telegram", side_effect=sent.append):
+            tracker.check_watches(state, weekly=weekly, manual=manual)
+        return sent
+
+    def _find(self, sent, marker):
+        return next((m for m in sent if marker in m), None)
+
+    def test_weekly_report_lists_the_under_drive_not_the_over_one(self):
+        report = self._find(self._run(weekly=True), "Weekly Report")
+        self.assertIsNotNone(report)
+        self.assertIn("20TB", report)
+        self.assertNotIn("4TB", report)
+
+    def test_manual_summary_lists_the_under_drive_not_the_over_one(self):
+        # A prior deal makes this not a first run, so the manual summary fires.
+        prev = {"deals": {"stale": {"eur_net_per_tb": 24.0}}, "history": []}
+        summary = self._find(self._run(manual=True, prev=prev), "Manual check")
+        self.assertIsNotNone(summary)
+        self.assertIn("20TB", summary)
+        self.assertNotIn("4TB", summary)
+
+    def test_leaderboard_excludes_over_threshold_drives(self):
+        board = self._find(self._run(weekly=True), "Best €/TB across all shops")
+        self.assertIsNotNone(board)
+        self.assertNotIn("4TB", board)
+
+    def test_summary_says_so_when_nothing_qualifies(self):
+        over_only = [self.ITEMS[1]]  # only the 4TB drive, over the bar
+        sent = []
+        state = {"watches": {}, "products": {}}
+        with mock.patch.object(tracker, "WATCHES", [self.WATCH]), \
+             mock.patch.object(tracker, "fetch_eur_rates", return_value={}), \
+             mock.patch.object(tracker, "fetch_watch", return_value=over_only), \
+             mock.patch.object(tracker, "fetch_shipping", return_value=0.0), \
+             mock.patch.object(tracker, "send_telegram", side_effect=sent.append):
+            tracker.check_watches(state, weekly=True, manual=False)
+        report = self._find(sent, "Weekly Report")
+        self.assertIsNotNone(report)
+        self.assertNotIn("4TB", report)
+        self.assertIn("Nothing under", report)
+
+
+DATABLOCKS = next(w for w in tracker.WATCHES if w["source"] == "datablocks")
+
+# Trimmed copy of the real https://datablocks.dev/collections/hard-drives/products.json
+# feed: one in-stock SATA drive, one out-of-stock SATA drive, a sub-4TB notebook drive,
+# and a SAS drive -- enough to pin parsing and every filter the watch relies on.
+DATABLOCKS_FEED = '''
+{"products": [
+  {"title": "Seagate Exos 28 TB SATA Recertified Hard Drive - ST28000NM000C",
+   "handle": "seagate-exos-28-tb-sata-recertified-hard-drive-st28000nm000c",
+   "vendor": "Seagate", "product_type": "Hard Drive",
+   "variants": [{"sku": "ST28000NM000C", "price": "799.99", "available": true, "grams": 680}]},
+  {"title": "20 TB SATA 3,5\\" Enterprise White Label Hard Drive - XX20000NM007D",
+   "handle": "seagate-exos-x20-20-tb-sata-white-label-hard-drive",
+   "vendor": "Seagate", "product_type": "Hard Drive",
+   "variants": [{"sku": "ST20000NM007D", "price": "319.99", "available": false, "grams": 680}]},
+  {"title": "2 TB SATA 2,5\\" Notebook White Label Hard Drive - XX2000LM007",
+   "handle": "seagate-st2000lm007-white-label",
+   "vendor": "Seagate", "product_type": "Hard Drive",
+   "variants": [{"sku": "ST2000LM007", "price": "79.99", "available": true, "grams": 100}]},
+  {"title": "22 TB SAS 3,5\\" Enterprise White Label Hard Drive - XX22000NM000E",
+   "handle": "seagate-st22000nm000e-white-label",
+   "vendor": "Seagate", "product_type": "Hard Drive",
+   "variants": [{"sku": "ST22000NM000E", "price": "339.99", "available": true, "grams": 700}]}
+]}
+'''
+
+
+class TestDatablocksParser(unittest.TestCase):
+    """Datablocks is a Shopify store, so its products.json feed is the scrape target:
+    structured price/SKU, an `available` boolean for stock, and a handle for the link."""
+
+    def _items(self):
+        return {it["item_id"]: it for it in tracker.parse_datablocks(DATABLOCKS_FEED)}
+
+    def test_price_sku_name_and_brand_parse(self):
+        d = self._items()["ST28000NM000C"]
+        self.assertEqual(d["price"], 799.99)
+        self.assertEqual(d["item_brand"], "Seagate")
+        self.assertTrue(d["item_name"].startswith("Seagate Exos 28 TB"))
+
+    def test_url_is_built_from_the_handle(self):
+        self.assertEqual(
+            self._items()["ST28000NM000C"]["url"],
+            "https://datablocks.dev/products/"
+            "seagate-exos-28-tb-sata-recertified-hard-drive-st28000nm000c")
+
+    def test_available_flag_maps_straight_to_stock(self):
+        items = self._items()
+        self.assertIs(items["ST28000NM000C"]["in_stock"], True)
+        self.assertIs(items["ST20000NM007D"]["in_stock"], False)
+
+    def test_prices_are_gross_and_strip_back_to_net(self):
+        """The shop's terms state prices include 21% BTW, so 799.99 is gross."""
+        self.assertAlmostEqual(tracker.to_eur_net(799.99, DATABLOCKS, {}),
+                               799.99 / 1.21, places=2)
+
+    def test_watch_declares_the_scraped_price_as_gross_at_21pct(self):
+        self.assertEqual(DATABLOCKS["price_basis"], "gross")
+        self.assertAlmostEqual(DATABLOCKS["vat_rate"], 0.21, places=2)
+
+
+class TestDatablocksRanking(unittest.TestCase):
+    """End to end over the feed: the right drives survive every filter."""
+
+    def _ranked(self):
+        items = tracker.parse_datablocks(DATABLOCKS_FEED)
+        return {d["sku"]: d for d in tracker.rank_by_price_per_tb(items, DATABLOCKS, {})}
+
+    def test_in_stock_sata_drive_is_ranked_on_its_net_per_tb(self):
+        d = self._ranked()["ST28000NM000C"]
+        self.assertAlmostEqual(d["eur_net_per_tb"], (799.99 / 1.21) / 28, places=2)
+
+    def test_out_of_stock_drive_never_appears(self):
+        self.assertNotIn("ST20000NM007D", self._ranked())
+
+    def test_sub_4tb_notebook_drive_is_excluded(self):
+        self.assertNotIn("ST2000LM007", self._ranked())
+
+    def test_sas_drive_is_excluded_even_from_this_feed(self):
+        self.assertNotIn("ST22000NM000E", self._ranked())
 
 
 class TestHistoryBasis(unittest.TestCase):

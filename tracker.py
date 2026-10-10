@@ -137,6 +137,33 @@ WATCHES = [
         "allow_unstated_gbps": True,
         "max_pages": 10,
     },
+    {
+        # Datablocks B.V. (Netherlands) -- a Seagate partner selling recertified and
+        # White Label SATA drives on a Shopify storefront. Shopify exposes the whole
+        # collection as JSON at .../products.json, so that is the scrape target: a
+        # structured price, SKU and `available` flag per variant, no HTML to parse.
+        # Inside the EU, so reverse-charged like the German shops. Prices *include* 21%
+        # NL BTW (stated in the shop's own terms, art. 9.6), so the scraped field is
+        # gross and the 21% is stripped back off to net before ranking.
+        "name": "Datablocks SATA HDD",
+        "source": "datablocks",
+        "urls": ["https://datablocks.dev/collections/hard-drives/products.json"],
+        "currency": "€",
+        "currency_code": "EUR",
+        "price_basis": "gross",       # products.json price includes 21% NL BTW
+        "vat_rate": 0.21,             # ...stripped back off to get net
+        "display_vat_rate": 0.21,     # the page shows that same gross figure
+        # No scrapable per-country table -- the policy only gives EU delivery as a
+        # "minimum of EUR 15.50", so that is the fallback and there is no parser.
+        "shipping": {"fallback": 15.50},
+        "name_filter": r"\bSATA\b",
+        "min_tb": 4.0,
+        "min_gbps": 6.0,
+        "allow_unstated_gbps": True,  # titles name SATA but rarely the 6Gbps rate
+        "max_pages": 10,
+        # Stock and links come straight from the feed, so there is no verify_stock,
+        # sitemap or search fallback to configure.
+    },
 ]
 
 PRICE_LOG = "prices.json"
@@ -553,10 +580,44 @@ def product_in_stock(url):
     return None if not m else m.group(1).lower() == "instock"
 
 
+def parse_datablocks(html):
+    """Datablocks (Shopify): the storefront's products.json feed.
+
+    One item per variant. Prices are gross (incl. 21% NL BTW, per the shop's terms),
+    stock is the variant's own `available` boolean -- so a sold-out drive is dropped
+    at ranking and silently re-appears the day it is back in stock -- and the product
+    link is built from the handle. No HTML scraping: the JSON is the API.
+    """
+    try:
+        data = json.loads(html)
+    except json.JSONDecodeError:
+        return []
+    items = []
+    for product in data.get("products", []):
+        handle = product.get("handle")
+        url = f"https://datablocks.dev/products/{handle}" if handle else None
+        for variant in product.get("variants", []):
+            try:
+                price = float(variant.get("price") or 0)
+            except (TypeError, ValueError):
+                continue
+            items.append({
+                "item_id": variant.get("sku") or str(variant.get("id")),
+                "item_name": product.get("title", ""),
+                "item_brand": product.get("vendor"),
+                "price": price,
+                "url": url,
+                "in_stock": bool(variant.get("available")),
+                "stock_qty": None,
+            })
+    return items
+
+
 PARSERS = {
     "ga4": parse_ga4,
     "servershop24": parse_servershop24,
     "gekko": parse_gekko,
+    "datablocks": parse_datablocks,
 }
 
 # Each shop paginates with its own query parameter.
@@ -564,6 +625,7 @@ PAGE_PARAM = {
     "ga4": "p",
     "servershop24": "page",
     "gekko": "page",
+    "datablocks": "page",   # Shopify: .../products.json?page=N (30 per page)
 }
 
 
