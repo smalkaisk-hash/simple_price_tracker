@@ -2,7 +2,7 @@
   "products": {},
   "watches": {
     "Techbuyer SATA HDD": {
-      "last_checked": "2026-10-10 15:01",
+      "last_checked": "2026-10-11 15:19",
       "best_eur_per_tb": 20.78,
       "matched": 48,
       "threshold": 25.0,
@@ -207,7 +207,7 @@
       "last_error": "scrape returned no products"
     },
     "Renewtech SATA HDD": {
-      "last_checked": "2026-10-10 15:05",
+      "last_checked": "2026-10-11 15:22",
       "best_eur_per_tb": 19.25,
       "matched": 15,
       "threshold": 25.0,
@@ -227,12 +227,6 @@
         }
       },
       "history": [
-        {
-          "date": "2026-09-11",
-          "best_eur_per_tb": 26.25,
-          "matched": 13,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-12",
           "best_eur_per_tb": 26.25,
@@ -406,11 +400,17 @@
           "best_eur_per_tb": 19.25,
           "matched": 15,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-11",
+          "best_eur_per_tb": 19.25,
+          "matched": 15,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "ServerShop24 SATA HDD": {
-      "last_checked": "2026-10-10 15:05",
+      "last_checked": "2026-10-11 15:22",
       "best_eur_per_tb": 21.01,
       "matched": 3,
       "threshold": 25.0,
@@ -430,12 +430,6 @@
         }
       },
       "history": [
-        {
-          "date": "2026-09-11",
-          "best_eur_per_tb": 20.07,
-          "matched": 4,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-12",
           "best_eur_per_tb": 20.07,
@@ -609,22 +603,22 @@
           "best_eur_per_tb": 21.01,
           "matched": 3,
           "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-11",
+          "best_eur_per_tb": 21.01,
+          "matched": 3,
+          "basis": "eur_incl_lv_vat"
         }
       ]
     },
     "Gekko SATA HDD": {
-      "last_checked": "2026-10-10 15:05",
+      "last_checked": "2026-10-11 15:23",
       "best_eur_per_tb": 28.26,
       "matched": 6,
       "threshold": 25.0,
       "deals": {},
       "history": [
-        {
-          "date": "2026-09-11",
-          "best_eur_per_tb": 27.31,
-          "matched": 6,
-          "basis": "eur_incl_lv_vat"
-        },
         {
           "date": "2026-09-12",
           "best_eur_per_tb": 27.31,
@@ -797,6 +791,67 @@
           "date": "2026-10-10",
           "best_eur_per_tb": 28.26,
           "matched": 6,
+          "basis": "eur_incl_lv_vat"
+        },
+        {
+          "date": "2026-10-11",
+          "best_eur_per_tb": 28.26,
+          "matched": 6,
+          "basis": "eur_incl_lv_vat"
+        }
+      ]
+    },
+    "Datablocks SATA HDD": {
+      "last_checked": "2026-10-11 15:23",
+      "best_eur_per_tb": 23.61,
+      "matched": 12,
+      "threshold": 25.0,
+      "deals": {
+        "ST28000NM000C": {
+          "name": "Seagate Exos 28 TB SATA Recertified Hard Drive - ST28000NM000C",
+          "price": 799.99,
+          "tb": 28.0,
+          "per_tb": 28.57,
+          "eur_price": 815.49,
+          "eur_per_tb": 29.12,
+          "eur_net_price": 661.15,
+          "eur_net_per_tb": 23.61,
+          "eur_shipping": null,
+          "shop_price": 967.99,
+          "shop_shipping": 15.5
+        },
+        "ST22000NM001C": {
+          "name": "Seagate Exos 22 TB SATA Recertified Hard Drive - ST22000NM001C",
+          "price": 639.99,
+          "tb": 22.0,
+          "per_tb": 29.09,
+          "eur_price": 655.49,
+          "eur_per_tb": 29.8,
+          "eur_net_price": 528.92,
+          "eur_net_per_tb": 24.04,
+          "eur_shipping": null,
+          "shop_price": 774.39,
+          "shop_shipping": 15.5
+        },
+        "ST20000NM004C": {
+          "name": "Seagate Exos 20 TB SATA Recertified Hard Drive - ST20000NM004C",
+          "price": 599.99,
+          "tb": 20.0,
+          "per_tb": 30.0,
+          "eur_price": 615.49,
+          "eur_per_tb": 30.77,
+          "eur_net_price": 495.86,
+          "eur_net_per_tb": 24.79,
+          "eur_shipping": null,
+          "shop_price": 725.99,
+          "shop_shipping": 15.5
+        }
+      },
+      "history": [
+        {
+          "date": "2026-10-11",
+          "best_eur_per_tb": 23.61,
+          "matched": 12,
           "basis": "eur_incl_lv_vat"
         }
       ]
